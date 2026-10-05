@@ -11,7 +11,7 @@
 <script>
 (function() {
   var p = new URLSearchParams(window.location.search);
-  if (p.get('v') !== '4.2') { p.set('v', '4.2'); window.location.replace(window.location.pathname + '?' + p.toString()); }
+  if (p.get('v') !== '4.3') { p.set('v', '4.3'); window.location.replace(window.location.pathname + '?' + p.toString()); }
 })();
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -239,7 +239,7 @@ select, input { width: 100%; padding: 12px; border-radius: 7px; border: 1px soli
   </div>
   <div class="header-derecha">
     <div class="fecha-actual" id="fechaActual"></div>
-    <div class="version">Sistema de Disponibilidad Semanal v4.2</div>
+    <div class="version">Sistema de Disponibilidad Semanal v4.3</div>
   </div>
 </header>
 
@@ -322,7 +322,6 @@ select, input { width: 100%; padding: 12px; border-radius: 7px; border: 1px soli
     </div>
   </div>
 
-  <!-- ============ TAB REGISTRAR ============ -->
   <div id="tabRegistrar" class="tab-contenido activo">
     <div class="tarjeta">
       <h2>Datos del conductor</h2>
@@ -366,7 +365,6 @@ select, input { width: 100%; padding: 12px; border-radius: 7px; border: 1px soli
     </div>
   </div>
 
-  <!-- ============ TAB VISUALIZAR (ADMIN) ============ -->
   <div id="tabVisualizar" class="tab-contenido">
     <div class="tarjeta">
       <h2>👀 Visualizar Disponibilidad</h2>
@@ -410,11 +408,7 @@ select, input { width: 100%; padding: 12px; border-radius: 7px; border: 1px soli
 
 <script>
 /* ============================================================
-   TRANSFERMATRI v4.2 — Disponibilidad SEMANAL 2026-2028
-   - Fix semanasDelMes con Number()
-   - Botones de modo sin (1/2) ni (2/2)
-   - Tabla y reportes: 7 columnas (LUN..DOM) en vez de 14
-   - 1/2 = solo Diurno | 2/2 = solo Nocturno | Ambos = 1/2+2/2
+   TRANSFERMATRI v4.3 — Disponibilidad SEMANAL 2026-2028
    ============================================================ */
 
 window.addEventListener('error', function(e) {
@@ -527,20 +521,6 @@ function diasDeLaSemana(semana) {
   return arr;
 }
 
-function semanaDelDia(año, mes, dia) {
-  año = Number(año); mes = Number(mes); dia = Number(dia);
-  var f = new Date(año, mes - 1, dia);
-  var dow = (f.getDay() + 6) % 7;
-  var lunes = new Date(f); lunes.setDate(lunes.getDate() - dow);
-  var m = lunes.getMonth() + 1;
-  var a = lunes.getFullYear();
-  var semanas = semanasDelMes(a, m);
-  for (var i = 0; i < semanas.length; i++) {
-    if (semanas[i].lunes.getTime() === lunes.getTime()) return { año: a, mes: m, semana: semanas[i].num };
-  }
-  return null;
-}
-
 function filtrarSemanasVisibles(semanas, año, mes) {
   año = Number(año);
   mes = Number(mes);
@@ -553,26 +533,48 @@ function filtrarSemanasVisibles(semanas, año, mes) {
 
 /* -------- Storage -------- */
 
+function cargarLocalStorage() {
+  try {
+    var raw = localStorage.getItem("disponibilidades");
+    if (!raw) return {};
+    var obj = JSON.parse(raw);
+    if (!obj || typeof obj !== 'object') return {};
+    return obj;
+  } catch (e) {
+    console.warn('localStorage corrupto, reiniciando:', e);
+    return {};
+  }
+}
+
+function guardarLocalStorage(obj) {
+  try {
+    localStorage.setItem("disponibilidades", JSON.stringify(obj));
+  } catch (e) {
+    console.warn('No se pudo guardar en localStorage:', e);
+    mostrarToast('⚠️ No se pudo guardar localmente', 'warning', 3000);
+  }
+}
+
 function claveRegistro(placa, conductor, año, mes, semana) {
   return conductor + "_" + placa + "_" + año + "_" + mes + "_" + semana;
 }
 
 function obtenerRegistroLocal(placa, conductor, año, mes, semana) {
-  var r = JSON.parse(localStorage.getItem("disponibilidades")) || {};
+  var r = cargarLocalStorage();
   return r[claveRegistro(placa, conductor, año, mes, semana)] || null;
 }
 
 function eliminarRegistroLocal(placa, conductor, año, mes, semana) {
-  var r = JSON.parse(localStorage.getItem("disponibilidades")) || {};
+  var r = cargarLocalStorage();
   var k = claveRegistro(placa, conductor, año, mes, semana);
-  if (r[k]) { delete r[k]; localStorage.setItem("disponibilidades", JSON.stringify(r)); return true; }
+  if (r[k]) { delete r[k]; guardarLocalStorage(r); return true; }
   return false;
 }
 
 function cargarTodosRegistros() {
   var cache = {};
   for (var k in _registrosCache) cache[k] = _registrosCache[k];
-  var locales = JSON.parse(localStorage.getItem("disponibilidades")) || {};
+  var locales = cargarLocalStorage();
   for (var k2 in locales) cache[k2] = locales[k2];
   return cache;
 }
@@ -1123,6 +1125,9 @@ function guardarSemana() {
     dias: dias, observacion: ''
   };
 
+  var existente = obtenerRegistroLocal(placa, nombre, a, m, s);
+  if (existente && existente.observacion) registro.observacion = existente.observacion;
+
   _guardarRegistro(registro);
 }
 
@@ -1130,9 +1135,9 @@ function _guardarRegistro(registro) {
   if (_guardandoEnProgreso) { mostrarToast('⏳ Guardando...', 'info'); return; }
   _guardandoEnProgreso = true;
 
-  var registros = JSON.parse(localStorage.getItem("disponibilidades")) || {};
+  var registros = cargarLocalStorage();
   registros[claveRegistro(registro.placa, registro.conductor, registro.año, registro.mes, registro.semana)] = registro;
-  localStorage.setItem("disponibilidades", JSON.stringify(registros));
+  guardarLocalStorage(registros);
 
   _registrosCache[claveRegistro(registro.placa, registro.conductor, registro.año, registro.mes, registro.semana)] = registro;
 
@@ -1165,7 +1170,6 @@ function _guardarRegistro(registro) {
     });
 }
 
-/* Devuelve el texto de un día según el estado, para usar en reportes/tabla */
 function valorDia(est) {
   if (!est) return '';
   if (est.x === 'descanso') return 'DESCANSO';
@@ -1249,16 +1253,122 @@ function cambiarVista(vista) {
 
 function cargarVisualizacion() {
   if (rolActual !== 'admin') return;
-  $('contenedorVisualizacion').innerHTML = '<p style="text-align:center;padding:30px;">⏳ Cargando...</p>';
+  $('contenedorVisualizacion').innerHTML = '<p style="text-align:center;padding:30px;">⏳ Cargando desde Google Sheets...</p>';
+
+  var locales = cargarLocalStorage();
+  for (var k in locales) _registrosCache[k] = locales[k];
+
   fetch(GOOGLE_SHEETS_URL + '?t=' + Date.now(), { cache: 'no-store' })
-    .then(function(r) { return r.json(); })
+    .then(function(r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r.json();
+    })
     .then(function(data) {
-      if (Array.isArray(data)) {
-        _registrosCache = _registrosCache || {};
+      if (Array.isArray(data) && data.length > 1) {
+        var parsed = parsearDatosSheet(data);
+        for (var kk in parsed) {
+          _registrosCache[kk] = parsed[kk];
+        }
+        mostrarToast('✅ ' + Object.keys(_registrosCache).length + ' registros cargados', 'success', 2000);
+      } else {
+        mostrarToast('ℹ️ El Sheet está vacío o sin datos válidos', 'info', 2500);
       }
       renderizarTablaDesdeCache();
     })
-    .catch(function() { renderizarTablaDesdeCache(); });
+    .catch(function(err) {
+      console.warn('Error fetch:', err);
+      mostrarToast('⚠️ Sin conexión, mostrando solo datos locales', 'warning', 3000);
+      renderizarTablaDesdeCache();
+    });
+}
+
+function parsearDatosSheet(data) {
+  var resultado = {};
+  var headers = data[0].map(function(h) { return String(h == null ? '' : h).trim().toUpperCase(); });
+
+  function buscarCol() {
+    var args = Array.prototype.slice.call(arguments);
+    for (var i = 0; i < args.length; i++) {
+      var idx = headers.indexOf(args[i]);
+      if (idx >= 0) return idx;
+    }
+    return -1;
+  }
+  function buscarColPorPrefijo(prefijo) {
+    for (var i = 0; i < headers.length; i++) {
+      if (headers[i].indexOf(prefijo) === 0) return i;
+    }
+    return -1;
+  }
+
+  var iPlaca = buscarCol('PLACA');
+  var iConductor = buscarCol('CONDUCTOR');
+  var iAño = buscarCol('AÑO', 'ANO');
+  var iMes = buscarCol('MES');
+  var iSemana = buscarCol('SEMANA', 'SEM');
+  var iLun = buscarCol('LUN', 'LUNES');
+  var iMar = buscarCol('MAR', 'MARTES');
+  var iMie = buscarCol('MIÉ', 'MIE', 'MIÉRCOLES', 'MIERCOLES');
+  if (iMie < 0) iMie = buscarColPorPrefijo('MI');
+  var iJue = buscarCol('JUE', 'JUEVES');
+  var iVie = buscarCol('VIE', 'VIERNES');
+  var iSab = buscarCol('SÁB', 'SAB', 'SÁBADO', 'SABADO');
+  if (iSab < 0) iSab = buscarColPorPrefijo('SÁ');
+  if (iSab < 0) iSab = buscarColPorPrefijo('SA');
+  var iDom = buscarCol('DOM', 'DOMINGO');
+  var iObs = buscarCol('OBSERVACIÓN', 'OBSERVACION', 'OBS');
+
+  if (iPlaca < 0 || iConductor < 0) {
+    console.warn('Columnas mínimas no encontradas. Headers:', headers);
+    return resultado;
+  }
+
+  var colsDias = [iLun, iMar, iMie, iJue, iVie, iSab, iDom];
+
+  for (var i = data.length - 1; i >= 1; i--) {
+    var fila = data[i];
+    if (!fila || !fila[iPlaca]) continue;
+
+    var placa = String(fila[iPlaca] || '').trim();
+    var conductor = String(fila[iConductor] || '').trim();
+    var año = iAño >= 0 ? Number(fila[iAño]) : 0;
+    var mes = iMes >= 0 ? Number(fila[iMes]) : 0;
+    var semana = iSemana >= 0 ? Number(fila[iSemana]) : 0;
+
+    if (!placa || !conductor) continue;
+    if (!año || !mes || !semana) continue;
+    if (placa.toUpperCase() === 'PLACA') continue;
+
+    var dias = {};
+    for (var d = 0; d < 7; d++) {
+      if (colsDias[d] < 0) continue;
+      var rawVal = fila[colsDias[d]];
+      var v = String(rawVal == null ? '' : rawVal).trim().toUpperCase().replace(/\s+/g, ' ');
+      if (!v) continue;
+      if (v === 'DESCANSO' || v === 'D') { dias[d] = { d: false, n: false, x: 'descanso' }; }
+      else if (v === 'MANTENIMIENTO' || v === 'MANTENIM.' || v === 'MANT') { dias[d] = { d: false, n: false, x: 'mantenimiento' }; }
+      else if (v === 'SPOT') { dias[d] = { d: false, n: false, x: 'spot' }; }
+      else if (v.indexOf('1/2') >= 0 && v.indexOf('2/2') >= 0) { dias[d] = { d: true, n: true, x: null }; }
+      else if (v === '1/2' || v === 'DIURNO') { dias[d] = { d: true, n: false, x: null }; }
+      else if (v === '2/2' || v === 'NOCTURNO') { dias[d] = { d: false, n: true, x: null }; }
+      else if (v === 'AMBOS' || v === 'D+N') { dias[d] = { d: true, n: true, x: null }; }
+    }
+
+    var obs = iObs >= 0 ? String(fila[iObs] || '').trim() : '';
+    var clave = conductor + "_" + placa + "_" + año + "_" + mes + "_" + semana;
+
+    resultado[clave] = {
+      conductor: conductor,
+      placa: placa,
+      año: año,
+      mes: mes,
+      semana: semana,
+      dias: dias,
+      observacion: obs
+    };
+  }
+
+  return resultado;
 }
 
 function renderizarTablaDesdeCache() {
@@ -1290,7 +1400,7 @@ function renderizarTablaDesdeCache() {
   });
 
   if (arr.length === 0) {
-    $('contenedorVisualizacion').innerHTML = '<div style="text-align:center;padding:40px;color:#666;"><h3>📭 Sin registros</h3></div>';
+    $('contenedorVisualizacion').innerHTML = '<div style="text-align:center;padding:40px;color:#666;"><h3>📭 Sin registros</h3><p style="font-size:13px;">Pulsa "🔄 ACTUALIZAR" para recargar desde Google Sheets.</p></div>';
     return;
   }
 
@@ -1344,12 +1454,19 @@ function construirFilaTabla(r, num) {
 function guardarObservacion(input) {
   var key = input.getAttribute('data-key');
   var txt = input.value;
-  var registros = JSON.parse(localStorage.getItem("disponibilidades")) || {};
+  var registros = cargarLocalStorage();
   if (registros[key]) {
     registros[key].observacion = txt;
-    localStorage.setItem("disponibilidades", JSON.stringify(registros));
+    guardarLocalStorage(registros);
     if (_registrosCache[key]) _registrosCache[key].observacion = txt;
     mostrarToast('💾 Observación guardada', 'success', 1500);
+    enviarASheets(construirPayloadSheets(registros[key]));
+  } else if (_registrosCache[key]) {
+    _registrosCache[key].observacion = txt;
+    registros[key] = _registrosCache[key];
+    guardarLocalStorage(registros);
+    mostrarToast('💾 Observación guardada', 'success', 1500);
+    enviarASheets(construirPayloadSheets(_registrosCache[key]));
   }
 }
 
@@ -1597,7 +1714,7 @@ function subirAGoogleSheets(btn) {
 /* -------- Eventos -------- */
 
 function iniciar() {
-  console.log('[boot] v4.2');
+  console.log('[boot] v4.3');
   mostrarFechaActual();
 
   poblarAños('año', false);
@@ -1694,7 +1811,7 @@ function iniciar() {
   $('btnSalirTop').addEventListener('click', cerrarSesion);
 
   cambiarVista('tabla');
-  console.log('[boot] ✅ v4.2 lista');
+  console.log('[boot] ✅ v4.3 lista');
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar);
