@@ -11,7 +11,7 @@
 <script>
 (function() {
   var p = new URLSearchParams(window.location.search);
-  if (p.get('v') !== '4.0') { p.set('v', '4.0'); window.location.replace(window.location.pathname + '?' + p.toString()); }
+  if (p.get('v') !== '4.1') { p.set('v', '4.1'); window.location.replace(window.location.pathname + '?' + p.toString()); }
 })();
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -238,7 +238,7 @@ select, input { width: 100%; padding: 12px; border-radius: 7px; border: 1px soli
   </div>
   <div class="header-derecha">
     <div class="fecha-actual" id="fechaActual"></div>
-    <div class="version">Sistema de Disponibilidad Semanal v4.0</div>
+    <div class="version">Sistema de Disponibilidad Semanal v4.1</div>
   </div>
 </header>
 
@@ -409,7 +409,8 @@ select, input { width: 100%; padding: 12px; border-radius: 7px; border: 1px soli
 
 <script>
 /* ============================================================
-   TRANSFERMATRI v4.0 — Disponibilidad SEMANAL 2026-2028
+   TRANSFERMATRI v4.1 — Disponibilidad SEMANAL 2026-2028
+   Fix: semanasDelMes con Number() para evitar comparación string/number
    ============================================================ */
 
 window.addEventListener('error', function(e) {
@@ -480,7 +481,7 @@ var vistaActual = 'tabla';
 var _guardandoEnProgreso = false;
 var _confirmCallback = null;
 var _registrosCache = {};
-var _diasSemanaActual = {}; // { 0..6: { d, n, x } }
+var _diasSemanaActual = {};
 var _modoActual = 'diurno';
 var _placaTrabajo = null;
 
@@ -491,7 +492,9 @@ function escapeAttr(t) { return String(t == null ? '' : t).replace(/&/g,'&amp;')
 /* -------- Fechas -------- */
 
 function semanasDelMes(año, mes) {
-  // mes: 1-12. Semana pertenece al mes del lunes.
+  /* FIX v4.1: forzar Number() para evitar comparación estricta string vs number */
+  año = Number(año);
+  mes = Number(mes);
   var semanas = [];
   var primerDia = new Date(año, mes - 1, 1);
   var dow = (primerDia.getDay() + 6) % 7; // 0=Lun
@@ -527,7 +530,7 @@ function semanaActualGlobal() {
 }
 
 function semanaDelDia(año, mes, dia) {
-  // Retorna { año, mes, semana } donde la semana pertenece al mes del lunes
+  año = Number(año); mes = Number(mes); dia = Number(dia);
   var f = new Date(año, mes - 1, dia);
   var dow = (f.getDay() + 6) % 7;
   var lunes = new Date(f); lunes.setDate(lunes.getDate() - dow);
@@ -541,7 +544,9 @@ function semanaDelDia(año, mes, dia) {
 }
 
 function filtrarSemanasVisibles(semanas, año, mes) {
-  // Semanas cuyo viernes es >= hoy (para no ocultar la semana en curso)
+  /* FIX v4.1: blindaje Number() */
+  año = Number(año);
+  mes = Number(mes);
   var hoy = new Date(); hoy.setHours(0,0,0,0);
   return semanas.filter(function(s) {
     var dom = new Date(s.domingo); dom.setHours(23,59,59,999);
@@ -649,10 +654,12 @@ function poblarSemanas(selectId, año, mes, permitirTodas, valorInicial) {
     s.innerHTML = '<option value="">Seleccione año y mes</option>';
     return;
   }
+  /* FIX v4.1: blindaje Number() */
+  año = Number(año);
+  mes = Number(mes);
   var semanas = semanasDelMes(año, mes);
   var visibles = filtrarSemanasVisibles(semanas, año, mes);
   if (visibles.length === 0) {
-    // No hay semanas futuras → mostrar todas para que no quede vacío
     visibles = semanas;
   }
   if (permitirTodas) {
@@ -684,13 +691,10 @@ function poblarPlacas(selectId) {
 }
 
 function poblarConductores(selectId) {
-  // Lista TODOS los conductores (permite multi-placa)
   var s = $(selectId);
   s.innerHTML = '<option value="">Seleccione</option>';
   var vistos = new Set();
   CONDUCTORES.forEach(function(c, i) {
-    // Dedupe por nombre (aparecen 2 "SIN CHOFER")
-    var key = c.nombre + "|" + i;
     var op = document.createElement('option');
     op.value = i;
     op.textContent = c.nombre;
@@ -716,7 +720,6 @@ function abrirModalConductor() {
   $('modalConductor').classList.add('active');
   $('loginPlaca').innerHTML = '<option value="">-- Seleccione una placa --</option>';
   poblarPlacas('loginPlaca');
-  // Reset conductor: mostrar todos pero sin placa obligatoria
   $('loginConductor').innerHTML = '<option value="">-- Seleccione su nombre --</option>';
   var s = $('loginConductor');
   CONDUCTORES.forEach(function(c, i) {
@@ -792,7 +795,6 @@ function iniciarSesionUsuario(nombre, placa) {
 
   $('placa').value = placa;
   $('placa').disabled = true;
-  // Conductor: mostrar todos pero preseleccionar el logueado
   $('conductor').innerHTML = '';
   CONDUCTORES.forEach(function(c, i) {
     var op = document.createElement('option');
@@ -815,13 +817,7 @@ function iniciarSesionUsuario(nombre, placa) {
   actualizarIdentificacion();
 
   setTimeout(function() {
-    var sem = semanaDelDia(hoy.getFullYear(), hoy.getMonth() + 1, hoy.getDate());
-    if (sem) {
-      // Buscar la semana del conductor logueado
-      var reg = obtenerRegistroLocal(placa, nombre, sem.año, sem.mes, sem.semana);
-      // Aunque no haya registro, ingresamos para mostrar el calendario vacío
-      ingresar();
-    }
+    ingresar();
   }, 250);
 }
 
@@ -941,7 +937,6 @@ function ingresar() {
 
   _placaTrabajo = placa;
 
-  // Cargar estado
   var reg = obtenerRegistroLocal(placa, nombre, a, m, s);
   _diasSemanaActual = {};
   if (reg && reg.dias) {
@@ -973,7 +968,6 @@ function renderCalendarioSemanal(semana, año, mes, placa, nombreActual) {
   cont.innerHTML = '';
 
   var dias = diasDeLaSemana(semana);
-
   var registros = cargarTodosRegistros();
 
   for (var i = 0; i < 7; i++) {
@@ -981,7 +975,6 @@ function renderCalendarioSemanal(semana, año, mes, placa, nombreActual) {
       var d = dias[idx];
       var est = _diasSemanaActual[idx] || { d: false, n: false, x: null };
 
-      // Detectar ocupación por otro conductor (misma placa + misma semana + mismo día + mismo turno)
       var ocupadoD = null, ocupadoN = null;
       for (var k in registros) {
         var r = registros[k];
@@ -999,7 +992,6 @@ function renderCalendarioSemanal(semana, año, mes, placa, nombreActual) {
       if (idx === 6) celda.classList.add('domingo');
       if (d.mes !== mes || d.año !== año) celda.classList.add('otro-mes');
 
-      // Clase de estado
       if (est.x === 'descanso') celda.classList.add('sel-x');
       else if (est.x === 'mantenimiento') celda.classList.add('sel-m');
       else if (est.x === 'spot') celda.classList.add('sel-s');
@@ -1007,7 +999,6 @@ function renderCalendarioSemanal(semana, año, mes, placa, nombreActual) {
       else if (est.d) celda.classList.add('sel-d');
       else if (est.n) celda.classList.add('sel-n');
 
-      // Header
       var mesBadge = '';
       if (d.mes !== mes || d.año !== año) {
         mesBadge = '<span class="mes-badge">' + MESES_NOMBRES[d.mes - 1].substring(0,3) + '</span>';
@@ -1052,9 +1043,7 @@ function marcarDia(idx, ocupadoD, ocupadoN) {
 
   if (_modoActual === 'diurno') {
     if (ocupadoD) { mostrarToast('Turno diurno ocupado por ' + ocupadoD, 'warning'); return; }
-    // Si el día tiene un estado especial, lo limpiamos
     if (nuevo.x) { nuevo.x = null; }
-    // Toggle diurno
     if (nuevo.d) nuevo.d = false; else nuevo.d = true;
   } else if (_modoActual === 'nocturno') {
     if (ocupadoN) { mostrarToast('Turno nocturno ocupado por ' + ocupadoN, 'warning'); return; }
@@ -1151,7 +1140,6 @@ function _guardarRegistro(registro) {
 
   _registrosCache[claveRegistro(registro.placa, registro.conductor, registro.año, registro.mes, registro.semana)] = registro;
 
-  // Enviar a Sheets en el nuevo formato
   var data = construirPayloadSheets(registro);
 
   var btn = $('btnGuardarSemana');
@@ -1266,7 +1254,6 @@ function cargarVisualizacion() {
     .then(function(data) {
       if (Array.isArray(data)) {
         _registrosCache = _registrosCache || {};
-        // No parseamos el formato viejo, se deja como está
       }
       renderizarTablaDesdeCache();
     })
@@ -1284,7 +1271,7 @@ function renderizarTablaDesdeCache() {
   var arr = [];
   for (var k in todos) {
     var r = todos[k];
-    if (!r || !r.dias) continue; // saltar formato viejo
+    if (!r || !r.dias) continue;
     if (filtroPlaca && r.placa !== filtroPlaca) continue;
     if (filtroConductor && r.conductor.toUpperCase().indexOf(filtroConductor) < 0) continue;
     if (filtroAño && Number(r.año) !== Number(filtroAño)) continue;
@@ -1407,9 +1394,8 @@ function cargarCalendarioMensual() {
     if (filtroPlaca && r.placa !== filtroPlaca) continue;
     if (filtroConductor && r.conductor.toUpperCase().indexOf(filtroConductor) < 0) continue;
 
-    // Necesitamos saber a qué día del mes corresponde cada idx de la semana
     var semanas = semanasDelMes(r.año, r.mes);
-    var sem = semanas.filter(function(x) { return x.num === r.semana; })[0];
+    var sem = semanas.filter(function(x) { return x.num === Number(r.semana); })[0];
     if (!sem) continue;
     var dias = diasDeLaSemana(sem);
     for (var i = 0; i < 7; i++) {
@@ -1494,7 +1480,7 @@ function construirFilasReporte() {
       }
       fila.push(vD, vN);
     }
-    fila.push(r.observacion || ''); // OBSERVACIÓN
+    fila.push(r.observacion || '');
     filas.push(fila);
   });
   return filas;
@@ -1613,17 +1599,15 @@ function subirAGoogleSheets(btn) {
 /* -------- Eventos -------- */
 
 function iniciar() {
-  console.log('[boot] v4.0');
+  console.log('[boot] v4.1');
   mostrarFechaActual();
 
-  // Poblar selectores principales
   poblarAños('año', false);
   poblarMeses('mes', false);
   poblarPlacas('placa');
   poblarConductores('conductor');
   poblarSemanas('semana', $('año').value, $('mes').value, false);
 
-  // Filtros admin
   poblarPlacasFiltro('filtroPlaca');
   poblarAños('filtroAño', true);
   poblarMeses('filtroMes', true);
@@ -1632,7 +1616,6 @@ function iniciar() {
   $('btnIngresar').disabled = true;
   ocultarCalendario();
 
-  // Login
   $('btnRolConductor').addEventListener('click', abrirModalConductor);
   $('btnRolAdmin').addEventListener('click', abrirModalAdmin);
   $('loginPlaca').addEventListener('change', validarLoginConductor);
@@ -1643,7 +1626,6 @@ function iniciar() {
   $('btnCancelarAdmin').addEventListener('click', cerrarModalAdmin);
   $('claveAdmin').addEventListener('keypress', function(e) { if (e.key === 'Enter') verificarClaveAdmin(); });
 
-  // Cambios en selects de registro
   $('año').addEventListener('change', function() {
     poblarSemanas('semana', Number($('año').value), Number($('mes').value), false);
     actualizarBotonBorrar();
@@ -1676,7 +1658,6 @@ function iniciar() {
   $('btnGuardarSemana').addEventListener('click', guardarSemana);
   $('btnBorrarRegistro').addEventListener('click', borrarMiRegistro);
 
-  // Modo calendario
   document.querySelectorAll('.modo-btn-cal').forEach(function(btn) {
     btn.addEventListener('click', function() {
       document.querySelectorAll('.modo-btn-cal').forEach(function(b) { b.classList.remove('activo'); });
@@ -1685,16 +1666,13 @@ function iniciar() {
     });
   });
 
-  // Tabs principales
   $('tabBtnRegistrar').addEventListener('click', function() { cambiarTab('registrar'); });
   $('tabVisualizarBtn').addEventListener('click', function() { cambiarTab('visualizar'); });
 
-  // Vistas admin
   $('tabVistaTabla').addEventListener('click', function() { cambiarVista('tabla'); });
   $('tabVistaCalendario').addEventListener('click', function() { cambiarVista('calendario'); });
   $('tabVistaReporte').addEventListener('click', function() { cambiarVista('reporte'); });
 
-  // Filtros admin
   $('filtroPlaca').addEventListener('change', function() { if (vistaActual === 'tabla') renderizarTablaDesdeCache(); else if (vistaActual === 'calendario') cargarCalendarioMensual(); });
   $('filtroConductor').addEventListener('input', function() { if (vistaActual === 'tabla') renderizarTablaDesdeCache(); });
   $('filtroAño').addEventListener('change', function() {
@@ -1708,26 +1686,22 @@ function iniciar() {
   $('filtroSemana').addEventListener('change', function() { if (vistaActual === 'tabla') renderizarTablaDesdeCache(); else if (vistaActual === 'calendario') cargarCalendarioMensual(); });
   $('btnActualizar').addEventListener('click', function() { cargarVisualizacion(); });
 
-  // Exportar
   $('btnExportarExcel').addEventListener('click', exportarExcel);
   $('btnExportarPDF').addEventListener('click', exportarPDF);
   $('btnSubirSheets').addEventListener('click', function() { subirAGoogleSheets(this); });
 
-  // Confirm modal
   $('btnCancelarConfirm').addEventListener('click', function() { cerrarConfirm(false); });
   $('btnAceptarConfirm').addEventListener('click', function() { cerrarConfirm(true); });
 
-  // Salir
   $('btnSalirTop').addEventListener('click', cerrarSesion);
 
   cambiarVista('tabla');
-  console.log('[boot] ✅ v4.0 lista');
+  console.log('[boot] ✅ v4.1 lista');
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar);
 else iniciar();
 
-// Exponer globales que se usan en onclick inline
 window.guardarObservacion = guardarObservacion;
 window.borrarRegistroAdmin = borrarRegistroAdmin;
 window.cerrarConfirm = cerrarConfirm;
