@@ -1,0 +1,1737 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate, max-age=0">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="-1">
+<meta name="theme-color" content="#17365d">
+<title>Disponibilidad Semanal - TRANSFERMATRI SA</title>
+<script>
+(function() {
+  var p = new URLSearchParams(window.location.search);
+  if (p.get('v') !== '4.0') { p.set('v', '4.0'); window.location.replace(window.location.pathname + '?' + p.toString()); }
+})();
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<style>
+* { box-sizing: border-box; }
+body { font-family: Arial, sans-serif; background-color: #f2f4f7; margin: 0; -webkit-text-size-adjust: 100%; }
+input, select, textarea { font-size: 16px; }
+button, .celda-semana, .logo-operativo-container, .tab-vista-btn, .tab-btn, .btn-rol { touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+header { background: linear-gradient(135deg, #17365d 0%, #1a4a7a 100%); color: white; padding: 15px 30px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
+.header-izquierda { display: flex; align-items: center; gap: 20px; }
+.header-logo { display: flex; align-items: center; gap: 15px; }
+.header-logo img { height: 70px; width: auto; border-radius: 8px; padding: 5px; background-color: white; object-fit: contain; }
+.header-texto h1 { margin: 0; font-size: 22px; font-weight: bold; letter-spacing: 1px; color: #ffffff; }
+.header-texto .subtitulo { margin: 3px 0 0 0; font-size: 13px; opacity: 0.9; color: #b8d4f0; }
+.header-texto .slogan { margin: 2px 0 0 0; font-size: 11px; opacity: 0.7; font-style: italic; color: #8ab3d9; }
+.header-derecha { text-align: right; font-size: 14px; opacity: 0.8; border-left: 2px solid rgba(255,255,255,0.2); padding-left: 20px; }
+.header-derecha .fecha-actual { font-weight: bold; font-size: 15px; color: #ffffff; }
+.header-derecha .version { font-size: 11px; opacity: 0.6; color: #b8d4f0; }
+
+.contenedor { max-width: 1200px; margin: 25px auto; padding: 0 20px; }
+.tarjeta { background: white; padding: 25px; margin-bottom: 20px; border-radius: 12px; box-shadow: 0 3px 10px rgba(0,0,0,0.08); }
+.controles { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr auto; gap: 12px; align-items: end; }
+label { font-weight: bold; display: block; margin-bottom: 7px; }
+select, input { width: 100%; padding: 12px; border-radius: 7px; border: 1px solid #ccc; font-size: 15px; box-sizing: border-box; }
+.btn-ingresar { padding: 12px 30px; border: none; border-radius: 7px; background-color: #548235; color: white; font-weight: bold; cursor: pointer; font-size: 15px; white-space: nowrap; }
+.btn-ingresar:disabled { background-color: #ccc; cursor: not-allowed; }
+
+.identificacion { margin-top: 20px; padding: 12px; background-color: #e8f0fa; color: #17365d; border-radius: 7px; font-weight: bold; font-size: 16px; }
+.identificacion.con-registro { background-color: #d9ead3; color: #1a7a3a; }
+
+.modo-selector-cal { display: flex; gap: 8px; flex-wrap: wrap; margin: 15px 0; padding: 10px; background: #f0f4f9; border-radius: 10px; justify-content: center; }
+.modo-btn-cal { padding: 10px 16px; border: 2px solid transparent; border-radius: 8px; background: white; cursor: pointer; font-family: inherit; font-size: 13px; font-weight: bold; color: #555; }
+.modo-btn-cal.activo { border-color: #17365d; background: #17365d; color: white; }
+
+.calendario-semanal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-top: 15px; }
+.celda-semana { min-height: 110px; border: 2px solid #ddd; border-radius: 10px; background: white; padding: 8px; display: flex; flex-direction: column; cursor: pointer; transition: all 0.15s; position: relative; }
+.celda-semana:hover { box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+.celda-semana.domingo { background: #fafafa; }
+.celda-semana.otro-mes { opacity: 0.75; border-style: dashed; }
+.celda-semana .cab { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 5px; }
+.celda-semana .cab .dow { font-size: 11px; font-weight: bold; color: #666; text-transform: uppercase; }
+.celda-semana .cab .num { font-size: 18px; font-weight: bold; color: #17365d; }
+.celda-semana .cab .mes-badge { font-size: 9px; background: #fff3cd; color: #856404; padding: 1px 5px; border-radius: 8px; font-weight: bold; }
+.celda-semana .estado { flex: 1; display: flex; flex-direction: column; gap: 3px; align-items: center; justify-content: center; font-size: 12px; font-weight: bold; }
+.celda-semana .estado .turno-badge { padding: 3px 8px; border-radius: 10px; display: inline-flex; align-items: center; gap: 3px; }
+.celda-semana .estado .turno-badge.d { background: #d9ead3; color: #1a7a3a; }
+.celda-semana .estado .turno-badge.n { background: #d4e6f1; color: #1a5276; }
+.celda-semana .estado .turno-badge.x { background: #fce4d6; color: #b85c00; }
+.celda-semana .estado .turno-badge.m { background: #fadbd8; color: #922b21; }
+.celda-semana .estado .turno-badge.s { background: #fff3cd; color: #856404; }
+.celda-semana .estado .turno-badge.bloqueado { background: #fce4e4; color: #c0392b; font-size: 10px; }
+
+.celda-semana.sel-d { background: #f1f8ed; border-color: #27ae60; }
+.celda-semana.sel-n { background: #eef5fb; border-color: #2980b9; }
+.celda-semana.sel-ambos { background: linear-gradient(135deg, #f1f8ed 50%, #eef5fb 50%); border-color: #1a7a3a; }
+.celda-semana.sel-x { background: #fef5e7; border-color: #f39c12; }
+.celda-semana.sel-m { background: #fdedec; border-color: #e74c3c; }
+.celda-semana.sel-s { background: #fffbea; border-color: #f1c40f; }
+
+.resumen-sem { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px; }
+.resumen-sem .box { background: #f7f9fb; padding: 15px; border-radius: 8px; text-align: center; }
+.resumen-sem .box .label { font-size: 12px; color: #666; text-transform: uppercase; font-weight: bold; }
+.resumen-sem .box .valor { font-size: 22px; font-weight: bold; color: #17365d; margin-top: 5px; }
+
+.btn-guardar { margin-top: 20px; padding: 13px 25px; border: none; border-radius: 7px; background-color: #17365d; color: white; font-weight: bold; cursor: pointer; font-size: 16px; }
+.btn-guardar:disabled { background-color: #ccc; cursor: not-allowed; }
+.btn-borrar-registro { margin-top: 10px; margin-left: 10px; padding: 13px 25px; border: none; border-radius: 7px; background-color: #e74c3c; color: white; font-weight: bold; cursor: pointer; font-size: 15px; display: none; }
+.btn-borrar-registro.visible { display: inline-block; }
+
+.pantalla-login { display: flex; justify-content: center; align-items: center; min-height: 60vh; padding: 20px; }
+.login-container { background: white; padding: 40px; border-radius: 16px; box-shadow: 0 8px 40px rgba(0,0,0,0.12); max-width: 500px; width: 100%; text-align: center; }
+.login-container .login-logo { margin-bottom: 20px; }
+.login-container .login-logo img { height: 80px; width: auto; }
+.login-container h2 { color: #17365d; margin-bottom: 10px; }
+.login-container .subtitulo-login { color: #666; font-size: 14px; margin-bottom: 25px; }
+.login-container .opciones { display: flex; flex-direction: column; gap: 12px; }
+.login-container .opciones .btn-rol { padding: 16px 20px; border: 2px solid #e8e8e8; border-radius: 10px; background: white; cursor: pointer; font-size: 16px; font-weight: bold; display: flex; align-items: center; justify-content: center; gap: 12px; font-family: inherit; }
+.login-container .opciones .btn-rol .icono { font-size: 24px; }
+.login-container .opciones .btn-rol .descripcion { font-weight: normal; font-size: 12px; color: #888; display: block; margin-top: 2px; }
+.login-container .opciones .btn-rol.usuario { border-color: #27ae60; }
+.login-container .opciones .btn-rol.admin { border-color: #2980b9; }
+
+.modal-conductor, .modal-admin, .modal-confirm { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; padding: 15px; }
+.modal-conductor.active, .modal-admin.active, .modal-confirm.active { display: flex; }
+.modal-conductor .modal-content, .modal-admin .modal-content, .modal-confirm-content { background: white; padding: 25px; border-radius: 16px; max-width: 480px; width: 100%; text-align: center; box-shadow: 0 8px 40px rgba(0,0,0,0.3); max-height: 92vh; overflow-y: auto; }
+.modal-conductor h3, .modal-admin h3, .modal-confirm-content h3 { color: #17365d; margin: 0 0 8px 0; }
+.modal-conductor .sub-texto { color: #666; font-size: 14px; margin-bottom: 20px; }
+.modal-conductor .grupo { margin-bottom: 15px; text-align: left; }
+.modal-conductor .grupo label { display: block; font-weight: bold; margin-bottom: 5px; color: #333; }
+.modal-conductor .grupo select { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; }
+.modal-conductor .btn-ingresar-conductor { padding: 12px 40px; border: none; border-radius: 8px; background: #27ae60; color: white; font-weight: bold; cursor: pointer; font-size: 16px; width: 100%; margin-top: 10px; font-family: inherit; }
+.modal-conductor .btn-ingresar-conductor:disabled { background: #ccc; cursor: not-allowed; }
+.modal-conductor .btn-cancelar-conductor { padding: 10px 20px; border: none; border-radius: 8px; background: #e74c3c; color: white; cursor: pointer; font-size: 14px; margin-top: 10px; width: 100%; font-family: inherit; }
+
+.modal-admin .input-clave { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; text-align: center; letter-spacing: 4px; margin-bottom: 15px; }
+.modal-admin .btn-ingresar-admin { padding: 12px 40px; border: none; border-radius: 8px; background: #17365d; color: white; font-weight: bold; cursor: pointer; font-size: 16px; width: 100%; font-family: inherit; }
+.modal-admin .btn-cancelar-admin { padding: 10px 20px; border: none; border-radius: 8px; background: #e74c3c; color: white; cursor: pointer; font-size: 14px; margin-top: 10px; width: 100%; font-family: inherit; }
+.modal-admin .error-clave { color: #e74c3c; font-size: 13px; margin-bottom: 10px; display: none; }
+.modal-admin .error-clave.visible { display: block; }
+
+.modal-confirm-content p { color: #555; font-size: 15px; margin: 0 0 20px 0; line-height: 1.4; }
+.modal-confirm-content .confirm-botones { display: flex; gap: 10px; }
+.modal-confirm-content .confirm-botones button { flex: 1; padding: 12px; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 15px; min-height: 44px; font-family: inherit; }
+.modal-confirm-content .btn-cancelar-confirm { background: #ecf0f1; color: #555; }
+.modal-confirm-content .btn-aceptar-confirm { background: #e74c3c; color: white; }
+
+.contenido-principal { display: none; }
+.contenido-principal.visible { display: block; }
+
+.barra-rol { background: white; padding: 10px 25px; border-radius: 12px; margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
+.barra-rol .rol-info { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.barra-rol .rol-info .etiqueta { font-weight: bold; color: #666; font-size: 13px; }
+.barra-rol .rol-info .rol-actual { font-weight: bold; padding: 4px 16px; border-radius: 20px; font-size: 14px; }
+.barra-rol .rol-info .rol-actual.usuario { background: #d5f5e3; color: #1a7a3a; }
+.barra-rol .rol-info .rol-actual.admin { background: #d4e6f1; color: #1a5276; }
+.barra-rol .rol-info .conductor-nombre { font-weight: bold; color: #17365d; font-size: 14px; background: #e8f0fa; padding: 3px 12px; border-radius: 15px; }
+.barra-rol .btn-salir { padding: 8px 20px; border: none; border-radius: 7px; background: #e74c3c; color: white; cursor: pointer; font-weight: bold; font-size: 13px; font-family: inherit; }
+
+.filtros-visualizacion { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr auto; gap: 12px; align-items: end; margin-bottom: 20px; }
+.filtros-visualizacion .grupo-filtro { display: flex; flex-direction: column; }
+.btn-actualizar { padding: 12px 20px; border: none; border-radius: 7px; background-color: #17365d; color: white; font-weight: bold; cursor: pointer; font-size: 14px; height: 48px; font-family: inherit; }
+
+.tabs-visualizacion { display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap; }
+.tab-vista-btn { padding: 10px 20px; border: none; border-radius: 7px; background-color: #e8f0fa; color: #17365d; font-weight: bold; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 8px; font-family: inherit; }
+.tab-vista-btn.activo { background-color: #17365d; color: white; }
+
+.tabla-disponibilidad { width: 100%; border-collapse: collapse; font-size: 11px; }
+.tabla-disponibilidad th { background-color: #17365d; color: white; padding: 8px 6px; text-align: left; white-space: nowrap; position: sticky; top: 0; z-index: 10; }
+.tabla-disponibilidad td { padding: 8px 6px; border-bottom: 1px solid #ddd; vertical-align: middle; }
+.tabla-disponibilidad .col-d, .tabla-disponibilidad .col-n { text-align: center; min-width: 55px; }
+.tabla-disponibilidad .col-obs { min-width: 180px; }
+.tabla-disponibilidad .col-obs input { padding: 6px 8px; font-size: 12px; border: 1px solid #ddd; border-radius: 4px; }
+
+.celda-d { background: #f1f8ed; color: #1a7a3a; font-weight: bold; padding: 3px 5px; border-radius: 4px; font-size: 10px; display: inline-block; }
+.celda-n { background: #eef5fb; color: #1a5276; font-weight: bold; padding: 3px 5px; border-radius: 4px; font-size: 10px; display: inline-block; }
+.celda-x { background: #fce4d6; color: #b85c00; font-weight: bold; padding: 3px 5px; border-radius: 4px; font-size: 10px; display: inline-block; }
+.celda-m { background: #fadbd8; color: #922b21; font-weight: bold; padding: 3px 5px; border-radius: 4px; font-size: 10px; display: inline-block; }
+.celda-s { background: #fff3cd; color: #856404; font-weight: bold; padding: 3px 5px; border-radius: 4px; font-size: 10px; display: inline-block; }
+.celda-vacia { color: #ccc; }
+
+.contenedor-tabla { max-height: 600px; overflow: auto; border: 1px solid #ddd; border-radius: 8px; -webkit-overflow-scrolling: touch; }
+
+.vista-contenido { display: none; }
+.vista-contenido.activo { display: block; }
+
+.vista-calendario-mensual { display: grid; grid-template-columns: repeat(7, 1fr); gap: 5px; margin-top: 15px; }
+.cal-header-dia { text-align: center; font-weight: bold; padding: 8px 4px; background: #17365d; color: white; border-radius: 6px; font-size: 12px; }
+.cal-dia { min-height: 70px; border: 1px solid #e0e0e0; border-radius: 8px; background: white; padding: 5px; font-size: 11px; }
+.cal-dia .num { font-weight: bold; font-size: 14px; color: #17365d; }
+.cal-dia .cnt { margin-top: 4px; font-size: 10px; display: flex; flex-direction: column; gap: 2px; }
+.cal-dia .cnt .b { padding: 1px 5px; border-radius: 8px; font-weight: bold; width: fit-content; }
+.cal-dia .cnt .b.d { background: #d9ead3; color: #1a7a3a; }
+.cal-dia .cnt .b.n { background: #d4e6f1; color: #1a5276; }
+.cal-dia .cnt .b.x { background: #fce4d6; color: #b85c00; }
+.cal-dia .cnt .b.m { background: #fadbd8; color: #922b21; }
+.cal-dia .cnt .b.s { background: #fff3cd; color: #856404; }
+
+.btn-reporte { padding: 12px 25px; border: none; border-radius: 7px; color: white; font-weight: bold; cursor: pointer; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; font-family: inherit; }
+.btn-reporte.excel { background: #27ae60; }
+.btn-reporte.pdf { background: #c0392b; }
+.btn-google-sheets { background: #4285F4; color: white; border: none; padding: 12px 25px; border-radius: 7px; cursor: pointer; font-weight: bold; font-size: 14px; display: inline-flex; align-items: center; gap: 8px; font-family: inherit; }
+
+.tabs { display: flex; gap: 10px; margin-bottom: 20px; border-bottom: 2px solid #ddd; padding-bottom: 10px; }
+.tab-btn { padding: 10px 20px; border: none; border-radius: 7px 7px 0 0; background-color: #e8f0fa; color: #17365d; font-weight: bold; cursor: pointer; font-size: 14px; font-family: inherit; }
+.tab-btn.activo { background-color: #17365d; color: white; }
+.tab-contenido { display: none; padding: 10px 0; }
+.tab-contenido.activo { display: block; }
+
+#contenedorCalendario, #contenedorResumen { display: none !important; }
+#contenedorCalendario.visible, #contenedorResumen.visible { display: block !important; }
+
+.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(20px); background: #333; color: white; padding: 14px 24px; border-radius: 10px; font-size: 14px; font-weight: 500; z-index: 99999; opacity: 0; transition: opacity 0.3s ease, transform 0.3s ease; pointer-events: none; max-width: 90vw; text-align: center; box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
+.toast.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.success { background: #27ae60; }
+.toast.error { background: #e74c3c; }
+.toast.warning { background: #f39c12; }
+.toast.info { background: #2980b9; }
+
+#errorPanel { display: none; position: fixed; bottom: 0; left: 0; right: 0; background: #c0392b; color: white; padding: 12px; font-size: 11px; font-family: monospace; z-index: 999999; max-height: 50vh; overflow-y: auto; }
+#errorPanel.visible { display: block; }
+#errorPanel pre { white-space: pre-wrap; word-break: break-all; margin: 5px 0; }
+
+@media(max-width: 700px) {
+  header { flex-direction: column; text-align: center; padding: 12px 15px; }
+  .header-logo { flex-direction: column; }
+  .header-logo img { height: 55px; }
+  .header-texto h1 { font-size: 17px; }
+  .header-derecha { border-left: none; border-top: 2px solid rgba(255,255,255,0.3); padding: 10px 0 0 0; text-align: center; width: 100%; }
+  .contenedor { padding: 0 12px; margin: 15px auto; }
+  .tarjeta { padding: 15px; }
+  .controles, .filtros-visualizacion { grid-template-columns: 1fr; gap: 10px; }
+  .resumen-sem { grid-template-columns: 1fr; }
+  .btn-guardar, .btn-ingresar { width: 100%; padding: 14px; }
+  .btn-borrar-registro { margin-left: 0; width: 100%; }
+  .calendario-semanal { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+  .celda-semana { min-height: 90px; }
+  .barra-rol { flex-direction: column; text-align: center; }
+  .barra-rol .btn-salir { width: 100%; padding: 12px; }
+  .contenedor-tabla { overflow-x: auto; max-height: 60vh; }
+  .tabla-disponibilidad { min-width: 1000px; }
+  .vista-calendario-mensual { grid-template-columns: repeat(7, 1fr); gap: 3px; }
+  .cal-dia { min-height: 55px; padding: 3px; }
+  .cal-dia .num { font-size: 12px; }
+}
+</style>
+</head>
+<body>
+
+<div id="errorPanel"><strong>⚠️ Error detectado:</strong><pre id="errorTexto"></pre></div>
+
+<header>
+  <div class="header-izquierda">
+    <div class="header-logo">
+      <img src="logo-transfermatri.png" alt="TRANSFERMATRI SA">
+      <div class="header-texto">
+        <h1>TRANSFERMATRI S.A.</h1>
+        <p class="subtitulo">COMPAÑÍA DE TRANSPORTE DE CARGA PESADA</p>
+        <p class="slogan">"Comprometidos con la excelencia en el transporte"</p>
+      </div>
+    </div>
+  </div>
+  <div class="header-derecha">
+    <div class="fecha-actual" id="fechaActual"></div>
+    <div class="version">Sistema de Disponibilidad Semanal v4.0</div>
+  </div>
+</header>
+
+<div class="contenedor contenido-principal" id="barraRol">
+  <div class="barra-rol">
+    <div class="rol-info">
+      <span class="etiqueta">🔐 Modo:</span>
+      <span class="rol-actual" id="rolActual">Usuario</span>
+      <span class="conductor-nombre" id="conductorNombre"></span>
+      <span style="font-size:13px; color:#888;" id="usuarioActual"></span>
+    </div>
+    <button class="btn-salir" id="btnSalirTop">🚪 Cerrar Sesión</button>
+  </div>
+</div>
+
+<div class="contenedor" id="pantallaLogin">
+  <div class="pantalla-login">
+    <div class="login-container">
+      <div class="login-logo"><img src="logo-transfermatri.png" alt="TRANSFERMATRI SA"></div>
+      <h2>📅 Disponibilidad Semanal</h2>
+      <p class="subtitulo-login">Selecciona tu rol para continuar</p>
+      <div class="opciones">
+        <button type="button" class="btn-rol usuario" id="btnRolConductor">
+          <span class="icono">👤</span>
+          <div>CONDUCTOR<span class="descripcion">Registra tu disponibilidad semanal</span></div>
+        </button>
+        <button type="button" class="btn-rol admin" id="btnRolAdmin">
+          <span class="icono">🔑</span>
+          <div>ADMINISTRADOR<span class="descripcion">Ver y gestionar registros</span></div>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-conductor" id="modalConductor">
+  <div class="modal-content">
+    <h3>👤 Ingreso de Conductor</h3>
+    <p class="sub-texto">Selecciona tu placa y tu nombre</p>
+    <div class="grupo">
+      <label>🚗 Placa</label>
+      <select id="loginPlaca"><option value="">-- Seleccione una placa --</option></select>
+    </div>
+    <div class="grupo">
+      <label>👤 Nombre</label>
+      <select id="loginConductor"><option value="">-- Seleccione su nombre --</option></select>
+    </div>
+    <button class="btn-ingresar-conductor" id="btnLoginConductor" disabled>🚪 INGRESAR</button>
+    <button class="btn-cancelar-conductor" id="btnCancelarConductor">❌ Cancelar</button>
+  </div>
+</div>
+
+<div class="modal-admin" id="modalAdmin">
+  <div class="modal-content">
+    <h3>🔑 Acceso Administrador</h3>
+    <p>Ingrese la clave de administrador</p>
+    <div class="error-clave" id="errorClave">❌ Clave incorrecta</div>
+    <input type="password" class="input-clave" id="claveAdmin" placeholder="Clave..." maxlength="20">
+    <button class="btn-ingresar-admin" id="btnIngresarAdmin">🔓 INGRESAR</button>
+    <button class="btn-cancelar-admin" id="btnCancelarAdmin">❌ Cancelar</button>
+  </div>
+</div>
+
+<div class="modal-confirm" id="modalConfirm">
+  <div class="modal-confirm-content">
+    <h3 id="confirmTitulo">Confirmar</h3>
+    <p id="confirmMensaje">¿Está seguro?</p>
+    <div class="confirm-botones">
+      <button class="btn-cancelar-confirm" id="btnCancelarConfirm">Cancelar</button>
+      <button class="btn-aceptar-confirm" id="btnAceptarConfirm">Aceptar</button>
+    </div>
+  </div>
+</div>
+
+<div class="contenedor contenido-principal" id="contenidoPrincipal">
+  <div class="tarjeta" style="padding: 15px 25px;">
+    <div class="tabs">
+      <button class="tab-btn activo" id="tabBtnRegistrar">📝 Registrar</button>
+      <button class="tab-btn" id="tabVisualizarBtn">👀 Visualizar</button>
+    </div>
+  </div>
+
+  <!-- ============ TAB REGISTRAR ============ -->
+  <div id="tabRegistrar" class="tab-contenido activo">
+    <div class="tarjeta">
+      <h2>Datos del conductor</h2>
+      <div class="controles">
+        <div><label>🚗 Placa</label><select id="placa"><option value="">Seleccione</option></select></div>
+        <div><label>👤 Conductor</label><select id="conductor"><option value="">Seleccione</option></select></div>
+        <div><label>📅 Año</label><select id="año"></select></div>
+        <div><label>📅 Mes</label><select id="mes"></select></div>
+        <div><label>📆 Semana</label><select id="semana"><option value="">Seleccione año y mes</option></select></div>
+        <div><button class="btn-ingresar" id="btnIngresar" disabled>🚪 INGRESAR</button></div>
+      </div>
+      <div class="identificacion" id="identificacion">👋 Seleccione placa, conductor, año, mes y semana</div>
+    </div>
+
+    <div class="tarjeta" id="contenedorCalendario">
+      <h2 id="tituloSemana">📋 Semana</h2>
+      <p id="mensajeInstruccion">Selecciona el estado arriba y luego haz clic en los días para marcarlos.</p>
+
+      <div class="modo-selector-cal">
+        <button class="modo-btn-cal activo" data-modo="diurno">☀️ Diurno (1/2)</button>
+        <button class="modo-btn-cal" data-modo="nocturno">🌙 Nocturno (2/2)</button>
+        <button class="modo-btn-cal" data-modo="ambos">☀️🌙 Ambos</button>
+        <button class="modo-btn-cal" data-modo="descanso">🛌 Descanso</button>
+        <button class="modo-btn-cal" data-modo="mantenimiento">🔧 Mantenimiento</button>
+        <button class="modo-btn-cal" data-modo="spot">📌 SPOT</button>
+        <button class="modo-btn-cal" data-modo="limpiar">🧹 Limpiar día</button>
+      </div>
+
+      <div id="calendarioSemanal" class="calendario-semanal"></div>
+
+      <div class="resumen-sem" id="resumenSemanal">
+        <div class="box"><div class="label">☀️ Turnos Diurnos</div><div class="valor" id="cntDiurno">0</div></div>
+        <div class="box"><div class="label">🌙 Turnos Nocturnos</div><div class="valor" id="cntNocturno">0</div></div>
+        <div class="box"><div class="label">📋 Estados Especiales</div><div class="valor" id="cntEspecial">0</div></div>
+      </div>
+
+      <div style="margin-top:20px;">
+        <button class="btn-guardar" id="btnGuardarSemana">💾 GUARDAR SEMANA</button>
+        <button class="btn-borrar-registro" id="btnBorrarRegistro">🗑️ BORRAR MI REGISTRO</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ TAB VISUALIZAR (ADMIN) ============ -->
+  <div id="tabVisualizar" class="tab-contenido">
+    <div class="tarjeta">
+      <h2>👀 Visualizar Disponibilidad</h2>
+      <div class="filtros-visualizacion">
+        <div class="grupo-filtro"><label>🚗 Placa</label><select id="filtroPlaca"><option value="">Todas</option></select></div>
+        <div class="grupo-filtro"><label>👤 Conductor</label><input type="text" id="filtroConductor" placeholder="Buscar..."></div>
+        <div class="grupo-filtro"><label>📅 Año</label><select id="filtroAño"></select></div>
+        <div class="grupo-filtro"><label>📅 Mes</label><select id="filtroMes"></select></div>
+        <div class="grupo-filtro"><label>📆 Semana</label><select id="filtroSemana"><option value="">Todas</option></select></div>
+        <div class="grupo-filtro"><button class="btn-actualizar" id="btnActualizar">🔄 ACTUALIZAR</button></div>
+      </div>
+
+      <div class="tabs-visualizacion">
+        <button class="tab-vista-btn activo" data-vista="tabla" id="tabVistaTabla">📋 TABLA</button>
+        <button class="tab-vista-btn" data-vista="calendario" id="tabVistaCalendario">📅 CALENDARIO</button>
+        <button class="tab-vista-btn" data-vista="reporte" id="tabVistaReporte">📊 REPORTE</button>
+      </div>
+
+      <div id="vistaTabla" class="vista-contenido activo">
+        <div id="contenedorVisualizacion"><p style="text-align:center;padding:30px;">Cargando...</p></div>
+      </div>
+
+      <div id="vistaCalendario" class="vista-contenido">
+        <div id="contenedorCalendarioMensual"><p style="text-align:center;padding:30px;">Cargando...</p></div>
+      </div>
+
+      <div id="vistaReporte" class="vista-contenido">
+        <div style="text-align:center;padding:30px;">
+          <h3 style="color:#17365d;">📊 Exportar</h3>
+          <p style="color:#666;font-size:13px;">Formato: N° | CONDUCTOR | PLACA | 14 columnas (Lun-D..Dom-N) | OBSERVACIÓN</p>
+          <div style="display:flex;gap:15px;justify-content:center;flex-wrap:wrap;margin-top:15px;">
+            <button class="btn-reporte excel" id="btnExportarExcel">📊 EXCEL</button>
+            <button class="btn-reporte pdf" id="btnExportarPDF">📄 PDF</button>
+            <button class="btn-google-sheets" id="btnSubirSheets">☁️ GOOGLE SHEETS</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   TRANSFERMATRI v4.0 — Disponibilidad SEMANAL 2026-2028
+   ============================================================ */
+
+window.addEventListener('error', function(e) {
+  var p = document.getElementById('errorPanel');
+  var t = document.getElementById('errorTexto');
+  if (p && t) { t.textContent = (e.message || 'Error') + '\n' + (e.filename || '') + ':' + (e.lineno || ''); p.classList.add('visible'); }
+});
+
+var CLAVE_ADMIN = "ADMIN2026";
+var GOOGLE_SHEETS_URL = "https://script.google.com/macros/s/AKfycbwc4a5SBXXMu5-1lDyhplLxDy9aUmHSvAW_CfM4TJsSgGhnv_UHHmBOPvaUsp_TYv7ynQ/exec";
+var IS_IOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+
+var AÑOS = [2026, 2027, 2028];
+var MESES_NOMBRES = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+var DIAS_SEMANA_CORTOS = ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'];
+var DIAS_SEMANA_LARGOS = ['LUN','MAR','MIÉ','JUE','VIE','SÁB','DOM'];
+
+var CONDUCTORES = [
+  { nombre: "CARLOS FERNANDO CHICAIZA IZA", placa: "AAA2885" },
+  { nombre: "LEONARDO LEON SOLIS", placa: "GBP5418" },
+  { nombre: "CARLOS MIGUEL LEON LEON", placa: "GBP5418" },
+  { nombre: "JUAN CARLOS CACERES MENA", placa: "LBB1479" },
+  { nombre: "ANIBAL ARTURO ACURIO CALVOPIÑA", placa: "PAA4292" },
+  { nombre: "JOSE ANTONIO TOAQUIZA VINOCUNGA", placa: "PAC6408" },
+  { nombre: "BRAULIO BENITO BONILLA BORJA", placa: "XAA1178" },
+  { nombre: "JAIME PATRICIO CISNEROS MERINO", placa: "AAA1493" },
+  { nombre: "ALVIN PAUL MEDINA PLUAS", placa: "AAA1496" },
+  { nombre: "SEGUNDO JOSE ANDRADE SORIA", placa: "AAA2057" },
+  { nombre: "LUCAS FRANCISCO CALDERON ROCHA", placa: "AAA2586" },
+  { nombre: "MARCO ANTONIO QUISPE CHUQUITARCO", placa: "AAW0463" },
+  { nombre: "WILSON ARMANDO LLASHA CALDERON", placa: "ABC2026" },
+  { nombre: "JONATHAN DAVILA", placa: "AFX0387" },
+  { nombre: "WALTER JOSÉ SERRANO", placa: "CAE0982" },
+  { nombre: "EDISON PEREZ", placa: "CAE0982" },
+  { nombre: "LUIS CHITALOGRO CHANALATA", placa: "EAG0537" },
+  { nombre: "CARLOS IVAN JAIME SUAREZ", placa: "GSY3504" },
+  { nombre: "PEDRO PAUL CALVOPIÑA TOVAR", placa: "GBP3139" },
+  { nombre: "JAIME GONZALO PADILLA GUILCASO", placa: "ICM0418" },
+  { nombre: "SIN CHOFER", placa: "IAK0628" },
+  { nombre: "ALEX BLADIMIR AGUAISA QUISHPE", placa: "LAI0304" },
+  { nombre: "EDISON FABIAN CHASIGUASIN PINO", placa: "LCB0009" },
+  { nombre: "WILLIAM PATRICIO AGUAGALLO CORDOVA", placa: "LBA6675" },
+  { nombre: "GIPSON JOHNNY RONQUILLO MUÑOZ", placa: "MAA3085" },
+  { nombre: "MARCO ANTONIO TAIPE REISANCHO", placa: "PAA8986" },
+  { nombre: "ANDY LENIN CHANGOLUISA CHICAIZA", placa: "PCC3812" },
+  { nombre: "WILFRIDO ALBERTO FUERTES JARAMILLO", placa: "PTF0325" },
+  { nombre: "FERNANDO MEDIAS CHACON PEREZ", placa: "PZR0348" },
+  { nombre: "PABLO MILTON PALMA", placa: "QAA1182" },
+  { nombre: "LUIS ARMANDO RODRIGUEZ NUÑEZ", placa: "QBA0957" },
+  { nombre: "CARLOS IVAN MOYON MOYON", placa: "TAA3554" },
+  { nombre: "FABIAN BUSTILLOS BUNGACHO", placa: "UAA1090" },
+  { nombre: "CRISTHIAN DAVID LUJE AMAGUAÑA", placa: "XAI0557" },
+  { nombre: "LUIS ENRIQUE LISINTUÑA CRUZ", placa: "XAI0695" },
+  { nombre: "ANGEL EDUARDO MOYON PAGUAY", placa: "XAA1188" },
+  { nombre: "FERNANDO DAVID PROAÑO GOMEZ", placa: "XAA1341" },
+  { nombre: "EDWIN PATRICIO CHASILOA AGUIRRE", placa: "XAI0821" },
+  { nombre: "TITO GERMANICO VALVERDE GUANO", placa: "XAI1123" },
+  { nombre: "EDISON JAVIER TENORIO CANDO", placa: "XAI1228" },
+  { nombre: "SIN CHOFER", placa: "XAI1149" },
+  { nombre: "PATRICIO SANDOVAL", placa: "ABE8842" }
+];
+
+var rolActual = 'usuario';
+var conductorLogueado = null;
+var placaLogueada = null;
+var calendarioVisible = false;
+var vistaActual = 'tabla';
+var _guardandoEnProgreso = false;
+var _confirmCallback = null;
+var _registrosCache = {};
+var _diasSemanaActual = {}; // { 0..6: { d, n, x } }
+var _modoActual = 'diurno';
+var _placaTrabajo = null;
+
+function $(id) { return document.getElementById(id); }
+function escapeHtml(t) { var d = document.createElement('div'); d.textContent = String(t == null ? '' : t); return d.innerHTML; }
+function escapeAttr(t) { return String(t == null ? '' : t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+/* -------- Fechas -------- */
+
+function semanasDelMes(año, mes) {
+  // mes: 1-12. Semana pertenece al mes del lunes.
+  var semanas = [];
+  var primerDia = new Date(año, mes - 1, 1);
+  var dow = (primerDia.getDay() + 6) % 7; // 0=Lun
+  var primerLunes = new Date(año, mes - 1, 1 - dow);
+  if (primerLunes.getMonth() !== mes - 1 || primerLunes.getFullYear() !== año) {
+    primerLunes.setDate(primerLunes.getDate() + 7);
+  }
+  var lunes = new Date(primerLunes);
+  var num = 1;
+  while (num <= 6) {
+    if (lunes.getMonth() !== mes - 1 || lunes.getFullYear() !== año) break;
+    var domingo = new Date(lunes); domingo.setDate(domingo.getDate() + 6);
+    semanas.push({ num: num, lunes: new Date(lunes), domingo: domingo });
+    lunes.setDate(lunes.getDate() + 7);
+    num++;
+  }
+  return semanas;
+}
+
+function diasDeLaSemana(semana) {
+  var arr = [];
+  for (var i = 0; i < 7; i++) {
+    var f = new Date(semana.lunes);
+    f.setDate(f.getDate() + i);
+    arr.push({ fecha: f, dia: f.getDate(), mes: f.getMonth() + 1, año: f.getFullYear(), dow: i });
+  }
+  return arr;
+}
+
+function semanaActualGlobal() {
+  var hoy = new Date();
+  return { año: hoy.getFullYear(), mes: hoy.getMonth() + 1, dia: hoy.getDate() };
+}
+
+function semanaDelDia(año, mes, dia) {
+  // Retorna { año, mes, semana } donde la semana pertenece al mes del lunes
+  var f = new Date(año, mes - 1, dia);
+  var dow = (f.getDay() + 6) % 7;
+  var lunes = new Date(f); lunes.setDate(lunes.getDate() - dow);
+  var m = lunes.getMonth() + 1;
+  var a = lunes.getFullYear();
+  var semanas = semanasDelMes(a, m);
+  for (var i = 0; i < semanas.length; i++) {
+    if (semanas[i].lunes.getTime() === lunes.getTime()) return { año: a, mes: m, semana: semanas[i].num };
+  }
+  return null;
+}
+
+function filtrarSemanasVisibles(semanas, año, mes) {
+  // Semanas cuyo viernes es >= hoy (para no ocultar la semana en curso)
+  var hoy = new Date(); hoy.setHours(0,0,0,0);
+  return semanas.filter(function(s) {
+    var dom = new Date(s.domingo); dom.setHours(23,59,59,999);
+    return dom.getTime() >= hoy.getTime();
+  });
+}
+
+/* -------- Storage -------- */
+
+function claveRegistro(placa, conductor, año, mes, semana) {
+  return conductor + "_" + placa + "_" + año + "_" + mes + "_" + semana;
+}
+
+function obtenerRegistroLocal(placa, conductor, año, mes, semana) {
+  var r = JSON.parse(localStorage.getItem("disponibilidades")) || {};
+  return r[claveRegistro(placa, conductor, año, mes, semana)] || null;
+}
+
+function eliminarRegistroLocal(placa, conductor, año, mes, semana) {
+  var r = JSON.parse(localStorage.getItem("disponibilidades")) || {};
+  var k = claveRegistro(placa, conductor, año, mes, semana);
+  if (r[k]) { delete r[k]; localStorage.setItem("disponibilidades", JSON.stringify(r)); return true; }
+  return false;
+}
+
+function cargarTodosRegistros() {
+  var cache = {};
+  for (var k in _registrosCache) cache[k] = _registrosCache[k];
+  var locales = JSON.parse(localStorage.getItem("disponibilidades")) || {};
+  for (var k2 in locales) cache[k2] = locales[k2];
+  return cache;
+}
+
+function enviarASheets(data) {
+  return fetch(GOOGLE_SHEETS_URL, {
+    method: 'POST', mode: 'no-cors',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  }).catch(function(err) { console.warn('POST:', err); });
+}
+
+/* -------- UI helpers -------- */
+
+function mostrarToast(mensaje, tipo, duracion) {
+  tipo = tipo || 'info'; duracion = duracion || 3000;
+  var toast = $('toastGlobal');
+  if (!toast) { toast = document.createElement('div'); toast.id = 'toastGlobal'; toast.className = 'toast'; document.body.appendChild(toast); }
+  toast.textContent = mensaje;
+  toast.className = 'toast visible ' + tipo;
+  clearTimeout(toast._timeout);
+  toast._timeout = setTimeout(function() { toast.classList.remove('visible'); }, duracion);
+}
+
+function mostrarConfirm(mensaje, callback, titulo) {
+  $('confirmTitulo').textContent = titulo || 'Confirmar';
+  $('confirmMensaje').textContent = mensaje;
+  $('modalConfirm').classList.add('active');
+  _confirmCallback = callback;
+}
+
+function cerrarConfirm(aceptar) {
+  $('modalConfirm').classList.remove('active');
+  if (_confirmCallback) { var cb = _confirmCallback; _confirmCallback = null; cb(aceptar); }
+}
+
+function mostrarFechaActual() {
+  var ahora = new Date();
+  var opciones = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+  $('fechaActual').textContent = ahora.toLocaleDateString('es-ES', opciones);
+}
+
+/* -------- Poblado de selects -------- */
+
+function obtenerPlacasUnicas() {
+  var set = new Set();
+  CONDUCTORES.forEach(function(c) { set.add(c.placa); });
+  return Array.from(set).sort();
+}
+
+function poblarAños(selectId, permitirTodos) {
+  var s = $(selectId);
+  s.innerHTML = permitirTodos ? '<option value="">Todos</option>' : '';
+  AÑOS.forEach(function(a) {
+    var op = document.createElement('option'); op.value = a; op.textContent = a; s.appendChild(op);
+  });
+  var hoy = new Date();
+  var añoActual = hoy.getFullYear();
+  if (AÑOS.indexOf(añoActual) >= 0) s.value = añoActual;
+}
+
+function poblarMeses(selectId, permitirTodos) {
+  var s = $(selectId);
+  s.innerHTML = permitirTodos ? '<option value="">Todos</option>' : '';
+  MESES_NOMBRES.forEach(function(n, i) {
+    var op = document.createElement('option'); op.value = i + 1; op.textContent = n; s.appendChild(op);
+  });
+  var hoy = new Date();
+  s.value = hoy.getMonth() + 1;
+}
+
+function poblarSemanas(selectId, año, mes, permitirTodas, valorInicial) {
+  var s = $(selectId);
+  s.innerHTML = '';
+  if (!año || !mes) {
+    s.innerHTML = '<option value="">Seleccione año y mes</option>';
+    return;
+  }
+  var semanas = semanasDelMes(año, mes);
+  var visibles = filtrarSemanasVisibles(semanas, año, mes);
+  if (visibles.length === 0) {
+    // No hay semanas futuras → mostrar todas para que no quede vacío
+    visibles = semanas;
+  }
+  if (permitirTodas) {
+    var opT = document.createElement('option'); opT.value = ''; opT.textContent = 'Todas'; s.appendChild(opT);
+  }
+  visibles.forEach(function(sem) {
+    var op = document.createElement('option');
+    op.value = sem.num;
+    op.textContent = 'Semana ' + sem.num + ' (' + fmtFecha(sem.lunes) + ' - ' + fmtFecha(sem.domingo) + ')';
+    s.appendChild(op);
+  });
+  if (valorInicial) {
+    s.value = valorInicial;
+  } else if (visibles.length > 0) {
+    s.value = visibles[0].num;
+  }
+}
+
+function fmtFecha(d) {
+  return String(d.getDate()).padStart(2, '0') + '/' + String(d.getMonth() + 1).padStart(2, '0');
+}
+
+function poblarPlacas(selectId) {
+  var s = $(selectId);
+  s.innerHTML = '<option value="">Seleccione</option>';
+  obtenerPlacasUnicas().forEach(function(p) {
+    var op = document.createElement('option'); op.value = p; op.textContent = p; s.appendChild(op);
+  });
+}
+
+function poblarConductores(selectId) {
+  // Lista TODOS los conductores (permite multi-placa)
+  var s = $(selectId);
+  s.innerHTML = '<option value="">Seleccione</option>';
+  var vistos = new Set();
+  CONDUCTORES.forEach(function(c, i) {
+    // Dedupe por nombre (aparecen 2 "SIN CHOFER")
+    var key = c.nombre + "|" + i;
+    var op = document.createElement('option');
+    op.value = i;
+    op.textContent = c.nombre;
+    if (vistos.has(c.nombre)) {
+      op.textContent += ' (' + c.placa + ')';
+    }
+    vistos.add(c.nombre);
+    s.appendChild(op);
+  });
+}
+
+function poblarPlacasFiltro(selectId) {
+  var s = $(selectId);
+  s.innerHTML = '<option value="">Todas</option>';
+  obtenerPlacasUnicas().forEach(function(p) {
+    var op = document.createElement('option'); op.value = p; op.textContent = p; s.appendChild(op);
+  });
+}
+
+/* -------- Login -------- */
+
+function abrirModalConductor() {
+  $('modalConductor').classList.add('active');
+  $('loginPlaca').innerHTML = '<option value="">-- Seleccione una placa --</option>';
+  poblarPlacas('loginPlaca');
+  // Reset conductor: mostrar todos pero sin placa obligatoria
+  $('loginConductor').innerHTML = '<option value="">-- Seleccione su nombre --</option>';
+  var s = $('loginConductor');
+  CONDUCTORES.forEach(function(c, i) {
+    var op = document.createElement('option');
+    op.value = i;
+    op.textContent = c.nombre;
+    s.appendChild(op);
+  });
+  $('btnLoginConductor').disabled = true;
+}
+
+function cerrarModalConductor() { $('modalConductor').classList.remove('active'); }
+
+function validarLoginConductor() {
+  var ok = $('loginPlaca').value !== '' && $('loginConductor').value !== '';
+  $('btnLoginConductor').disabled = !ok;
+}
+
+function ingresarConductor() {
+  var placa = $('loginPlaca').value;
+  var idx = parseInt($('loginConductor').value);
+  if (!placa || isNaN(idx) || !CONDUCTORES[idx]) { mostrarToast('Complete placa y nombre', 'warning'); return; }
+  conductorLogueado = CONDUCTORES[idx].nombre;
+  placaLogueada = placa;
+  cerrarModalConductor();
+  iniciarSesionUsuario(conductorLogueado, placa);
+}
+
+function abrirModalAdmin() {
+  $('modalAdmin').classList.add('active');
+  $('claveAdmin').value = '';
+  $('errorClave').classList.remove('visible');
+  setTimeout(function() { $('claveAdmin').focus(); }, 100);
+}
+function cerrarModalAdmin() { $('modalAdmin').classList.remove('active'); }
+
+function verificarClaveAdmin() {
+  var clave = $('claveAdmin').value;
+  if (clave === CLAVE_ADMIN) { cerrarModalAdmin(); iniciarSesionAdmin(); }
+  else { $('errorClave').classList.add('visible'); $('claveAdmin').value = ''; $('claveAdmin').focus(); }
+}
+
+/* -------- Sesiones -------- */
+
+function mostrarContenidoPrincipal() {
+  $('pantallaLogin').style.display = 'none';
+  document.querySelectorAll('.contenido-principal').forEach(function(el) { el.classList.add('visible'); });
+}
+
+function actualizarBarraRol(nombre, placa) {
+  var rolLabel = $('rolActual');
+  var usuarioInfo = $('usuarioActual');
+  var conductorNombre = $('conductorNombre');
+  if (rolActual === 'admin') {
+    rolLabel.textContent = '🔑 Administrador';
+    rolLabel.className = 'rol-actual admin';
+    usuarioInfo.textContent = '👑 Acceso completo';
+    conductorNombre.textContent = '';
+    conductorNombre.style.display = 'none';
+  } else {
+    rolLabel.textContent = '👤 Conductor';
+    rolLabel.className = 'rol-actual usuario';
+    usuarioInfo.textContent = '📝 Disponibilidad semanal';
+    conductorNombre.textContent = '🚗 ' + placa + ' · ' + nombre;
+    conductorNombre.style.display = 'inline-block';
+  }
+}
+
+function iniciarSesionUsuario(nombre, placa) {
+  rolActual = 'usuario';
+  mostrarContenidoPrincipal();
+  actualizarBarraRol(nombre, placa);
+
+  $('placa').value = placa;
+  $('placa').disabled = true;
+  // Conductor: mostrar todos pero preseleccionar el logueado
+  $('conductor').innerHTML = '';
+  CONDUCTORES.forEach(function(c, i) {
+    var op = document.createElement('option');
+    op.value = i;
+    op.textContent = c.nombre;
+    if (c.nombre === nombre) op.selected = true;
+    $('conductor').appendChild(op);
+  });
+  $('conductor').disabled = true;
+
+  var hoy = new Date();
+  $('año').value = AÑOS.indexOf(hoy.getFullYear()) >= 0 ? hoy.getFullYear() : AÑOS[0];
+  $('mes').value = hoy.getMonth() + 1;
+  poblarSemanas('semana', $('año').value, $('mes').value, false);
+  $('btnIngresar').disabled = false;
+
+  $('tabVisualizarBtn').style.display = 'none';
+  cambiarTab('registrar');
+
+  actualizarIdentificacion();
+
+  setTimeout(function() {
+    var sem = semanaDelDia(hoy.getFullYear(), hoy.getMonth() + 1, hoy.getDate());
+    if (sem) {
+      // Buscar la semana del conductor logueado
+      var reg = obtenerRegistroLocal(placa, nombre, sem.año, sem.mes, sem.semana);
+      // Aunque no haya registro, ingresamos para mostrar el calendario vacío
+      ingresar();
+    }
+  }, 250);
+}
+
+function iniciarSesionAdmin() {
+  rolActual = 'admin';
+  conductorLogueado = null;
+  placaLogueada = null;
+  mostrarContenidoPrincipal();
+  actualizarBarraRol(null, null);
+  $('placa').disabled = false;
+  $('conductor').disabled = false;
+  $('tabVisualizarBtn').style.display = 'block';
+  poblarPlacas('placa');
+  poblarConductores('conductor');
+  cambiarTab('visualizar');
+  cargarVisualizacion();
+}
+
+function cerrarSesion() {
+  mostrarConfirm('¿Cerrar sesión?', function(ok) {
+    if (!ok) return;
+    rolActual = 'usuario';
+    conductorLogueado = null;
+    placaLogueada = null;
+    $('placa').disabled = false;
+    $('conductor').disabled = false;
+    document.querySelectorAll('.contenido-principal').forEach(function(el) { el.classList.remove('visible'); });
+    $('pantallaLogin').style.display = 'block';
+    ocultarCalendario();
+    actualizarIdentificacion();
+  }, 'Cerrar Sesión');
+}
+
+function cambiarTab(tab) {
+  document.querySelectorAll('.tab-contenido').forEach(function(el) { el.classList.remove('activo'); });
+  document.querySelectorAll('.tab-btn').forEach(function(el) { el.classList.remove('activo'); });
+  if (tab === 'registrar') {
+    $('tabRegistrar').classList.add('activo');
+    $('tabBtnRegistrar').classList.add('activo');
+  } else {
+    if (rolActual === 'admin') {
+      $('tabVisualizar').classList.add('activo');
+      $('tabVisualizarBtn').classList.add('activo');
+      cambiarVista(vistaActual);
+    } else {
+      cambiarTab('registrar');
+    }
+  }
+}
+
+/* -------- Identificación -------- */
+
+function actualizarIdentificacion() {
+  var id = $('identificacion');
+  if (!id) return;
+  if (rolActual !== 'usuario') {
+    id.textContent = '👑 Modo administrador';
+    id.classList.remove('con-registro');
+    return;
+  }
+  if (!conductorLogueado || !placaLogueada) {
+    id.textContent = '👋 Seleccione placa y conductor';
+    id.classList.remove('con-registro');
+    return;
+  }
+  var a = $('año') ? $('año').value : '';
+  var m = $('mes') ? $('mes').value : '';
+  var s = $('semana') ? $('semana').value : '';
+  if (!a || !m || !s) {
+    id.textContent = '🚗 ' + placaLogueada + ' — 👤 ' + conductorLogueado + ' — Seleccione semana';
+    id.classList.remove('con-registro');
+    return;
+  }
+  var reg = obtenerRegistroLocal(placaLogueada, conductorLogueado, Number(a), Number(m), Number(s));
+  if (reg) {
+    var cnt = 0;
+    for (var k in (reg.dias || {})) {
+      var e = reg.dias[k];
+      if (e.d) cnt++;
+      if (e.n) cnt++;
+      if (e.x) cnt++;
+    }
+    id.textContent = '🚗 ' + placaLogueada + ' — 👤 ' + conductorLogueado + ' — Semana ' + s + ' ' + MESES_NOMBRES[m-1] + ' ' + a + ' — 📋 Registrado (' + cnt + ' marcas)';
+    id.classList.add('con-registro');
+  } else {
+    id.textContent = '🚗 ' + placaLogueada + ' — 👤 ' + conductorLogueado + ' — Semana ' + s + ' ' + MESES_NOMBRES[m-1] + ' ' + a + ' — 🆕 Sin registro';
+    id.classList.remove('con-registro');
+  }
+}
+
+/* -------- Calendario semanal -------- */
+
+function ocultarCalendario() {
+  calendarioVisible = false;
+  var c1 = $('contenedorCalendario');
+  if (c1) { c1.classList.remove('visible'); c1.style.display = 'none'; }
+}
+
+function ingresar() {
+  if (rolActual === 'usuario' && (!conductorLogueado || !placaLogueada)) return;
+  if (rolActual === 'admin') {
+    if (!$('placa').value || $('conductor').value === '') { mostrarToast('Seleccione placa y conductor', 'warning'); return; }
+  }
+  var a = Number($('año').value);
+  var m = Number($('mes').value);
+  var s = Number($('semana').value);
+  if (!a || !m || !s) { mostrarToast('Seleccione año, mes y semana', 'warning'); return; }
+
+  var placa = rolActual === 'usuario' ? placaLogueada : $('placa').value;
+  var nombre;
+  if (rolActual === 'usuario') nombre = conductorLogueado;
+  else {
+    var idx = parseInt($('conductor').value);
+    if (isNaN(idx) || !CONDUCTORES[idx]) { mostrarToast('Conductor inválido', 'error'); return; }
+    nombre = CONDUCTORES[idx].nombre;
+  }
+
+  _placaTrabajo = placa;
+
+  // Cargar estado
+  var reg = obtenerRegistroLocal(placa, nombre, a, m, s);
+  _diasSemanaActual = {};
+  if (reg && reg.dias) {
+    for (var k in reg.dias) _diasSemanaActual[k] = { d: !!reg.dias[k].d, n: !!reg.dias[k].n, x: reg.dias[k].x || null };
+  }
+
+  calendarioVisible = true;
+  var cont = $('contenedorCalendario');
+  cont.style.display = 'block';
+  cont.classList.add('visible');
+
+  var semanas = semanasDelMes(a, m);
+  var sem = semanas.filter(function(x) { return x.num === s; })[0];
+  if (!sem) { mostrarToast('Semana no encontrada', 'error'); return; }
+
+  var mesesTxt = MESES_NOMBRES[m - 1];
+  $('tituloSemana').textContent = '📋 Semana ' + s + ' · ' + mesesTxt + ' ' + a + ' · ' + fmtFecha(sem.lunes) + ' al ' + fmtFecha(sem.domingo);
+
+  renderCalendarioSemanal(sem, a, m, placa, nombre);
+  actualizarResumenSemanal();
+  actualizarBotonBorrar();
+  actualizarIdentificacion();
+
+  try { cont.scrollIntoView({ behavior: 'smooth', block: 'start' }); } catch(e) { cont.scrollIntoView(true); }
+}
+
+function renderCalendarioSemanal(semana, año, mes, placa, nombreActual) {
+  var cont = $('calendarioSemanal');
+  cont.innerHTML = '';
+
+  var dias = diasDeLaSemana(semana);
+
+  var registros = cargarTodosRegistros();
+
+  for (var i = 0; i < 7; i++) {
+    (function(idx) {
+      var d = dias[idx];
+      var est = _diasSemanaActual[idx] || { d: false, n: false, x: null };
+
+      // Detectar ocupación por otro conductor (misma placa + misma semana + mismo día + mismo turno)
+      var ocupadoD = null, ocupadoN = null;
+      for (var k in registros) {
+        var r = registros[k];
+        if (!r || r.placa !== placa) continue;
+        if (Number(r.año) !== año || Number(r.mes) !== mes || Number(r.semana) !== semana.num) continue;
+        if (r.conductor === nombreActual) continue;
+        var otro = r.dias && r.dias[idx];
+        if (!otro) continue;
+        if (otro.d) ocupadoD = r.conductor;
+        if (otro.n) ocupadoN = r.conductor;
+      }
+
+      var celda = document.createElement('div');
+      celda.className = 'celda-semana';
+      if (idx === 6) celda.classList.add('domingo');
+      if (d.mes !== mes || d.año !== año) celda.classList.add('otro-mes');
+
+      // Clase de estado
+      if (est.x === 'descanso') celda.classList.add('sel-x');
+      else if (est.x === 'mantenimiento') celda.classList.add('sel-m');
+      else if (est.x === 'spot') celda.classList.add('sel-s');
+      else if (est.d && est.n) celda.classList.add('sel-ambos');
+      else if (est.d) celda.classList.add('sel-d');
+      else if (est.n) celda.classList.add('sel-n');
+
+      // Header
+      var mesBadge = '';
+      if (d.mes !== mes || d.año !== año) {
+        mesBadge = '<span class="mes-badge">' + MESES_NOMBRES[d.mes - 1].substring(0,3) + '</span>';
+      }
+      var html = '<div class="cab"><span class="dow">' + DIAS_SEMANA_CORTOS[idx] + '</span><span class="num">' + d.dia + '</span>' + mesBadge + '</div>';
+      html += '<div class="estado">';
+
+      if (est.x === 'descanso') html += '<span class="turno-badge x">🛌 Descanso</span>';
+      else if (est.x === 'mantenimiento') html += '<span class="turno-badge m">🔧 Mantenim.</span>';
+      else if (est.x === 'spot') html += '<span class="turno-badge s">📌 SPOT</span>';
+      else {
+        if (est.d) {
+          if (ocupadoD) html += '<span class="turno-badge bloqueado">🚫 D: ' + escapeHtml(ocupadoD.split(' ')[0]) + '</span>';
+          else html += '<span class="turno-badge d">☀️ 1/2</span>';
+        }
+        if (est.n) {
+          if (ocupadoN) html += '<span class="turno-badge bloqueado">🚫 N: ' + escapeHtml(ocupadoN.split(' ')[0]) + '</span>';
+          else html += '<span class="turno-badge n">🌙 2/2</span>';
+        }
+      }
+      html += '</div>';
+      celda.innerHTML = html;
+
+      celda.addEventListener('click', function() {
+        marcarDia(idx, ocupadoD, ocupadoN);
+      });
+
+      cont.appendChild(celda);
+    })(i);
+  }
+}
+
+function marcarDia(idx, ocupadoD, ocupadoN) {
+  if (_modoActual === 'limpiar') {
+    _diasSemanaActual[idx] = { d: false, n: false, x: null };
+    renderCalendarioSemanalActual();
+    return;
+  }
+
+  var actual = _diasSemanaActual[idx] || { d: false, n: false, x: null };
+  var nuevo = { d: actual.d, n: actual.n, x: actual.x };
+
+  if (_modoActual === 'diurno') {
+    if (ocupadoD) { mostrarToast('Turno diurno ocupado por ' + ocupadoD, 'warning'); return; }
+    // Si el día tiene un estado especial, lo limpiamos
+    if (nuevo.x) { nuevo.x = null; }
+    // Toggle diurno
+    if (nuevo.d) nuevo.d = false; else nuevo.d = true;
+  } else if (_modoActual === 'nocturno') {
+    if (ocupadoN) { mostrarToast('Turno nocturno ocupado por ' + ocupadoN, 'warning'); return; }
+    if (nuevo.x) { nuevo.x = null; }
+    if (nuevo.n) nuevo.n = false; else nuevo.n = true;
+  } else if (_modoActual === 'ambos') {
+    if (ocupadoD || ocupadoN) { mostrarToast('Día ocupado en algún turno', 'warning'); return; }
+    if (nuevo.d && nuevo.n && !nuevo.x) { nuevo.d = false; nuevo.n = false; }
+    else { nuevo.d = true; nuevo.n = true; nuevo.x = null; }
+  } else if (_modoActual === 'descanso') {
+    if (nuevo.x === 'descanso') { nuevo.x = null; }
+    else { nuevo.x = 'descanso'; nuevo.d = false; nuevo.n = false; }
+  } else if (_modoActual === 'mantenimiento') {
+    if (nuevo.x === 'mantenimiento') { nuevo.x = null; }
+    else { nuevo.x = 'mantenimiento'; nuevo.d = false; nuevo.n = false; }
+  } else if (_modoActual === 'spot') {
+    if (nuevo.x === 'spot') { nuevo.x = null; }
+    else { nuevo.x = 'spot'; nuevo.d = false; nuevo.n = false; }
+  }
+
+  if (!nuevo.d && !nuevo.n && !nuevo.x) delete _diasSemanaActual[idx];
+  else _diasSemanaActual[idx] = nuevo;
+
+  renderCalendarioSemanalActual();
+  actualizarResumenSemanal();
+}
+
+function renderCalendarioSemanalActual() {
+  var a = Number($('año').value);
+  var m = Number($('mes').value);
+  var s = Number($('semana').value);
+  var semanas = semanasDelMes(a, m);
+  var sem = semanas.filter(function(x) { return x.num === s; })[0];
+  if (!sem) return;
+  var placa = rolActual === 'usuario' ? placaLogueada : $('placa').value;
+  var nombre = rolActual === 'usuario' ? conductorLogueado : (CONDUCTORES[parseInt($('conductor').value)] || {}).nombre;
+  renderCalendarioSemanal(sem, a, m, placa, nombre);
+}
+
+function actualizarResumenSemanal() {
+  var cd = 0, cn = 0, cx = 0;
+  for (var k in _diasSemanaActual) {
+    var e = _diasSemanaActual[k];
+    if (e.d) cd++;
+    if (e.n) cn++;
+    if (e.x) cx++;
+  }
+  $('cntDiurno').textContent = cd;
+  $('cntNocturno').textContent = cn;
+  $('cntEspecial').textContent = cx;
+}
+
+/* -------- Guardar -------- */
+
+function guardarSemana() {
+  var a = Number($('año').value);
+  var m = Number($('mes').value);
+  var s = Number($('semana').value);
+  if (!a || !m || !s) { mostrarToast('Seleccione año, mes y semana', 'warning'); return; }
+
+  var placa = rolActual === 'usuario' ? placaLogueada : $('placa').value;
+  var nombre;
+  if (rolActual === 'usuario') nombre = conductorLogueado;
+  else {
+    var idx = parseInt($('conductor').value);
+    if (isNaN(idx) || !CONDUCTORES[idx]) { mostrarToast('Conductor inválido', 'error'); return; }
+    nombre = CONDUCTORES[idx].nombre;
+  }
+
+  var dias = {};
+  for (var k in _diasSemanaActual) {
+    var e = _diasSemanaActual[k];
+    if (e.d || e.n || e.x) dias[k] = { d: !!e.d, n: !!e.n, x: e.x || null };
+  }
+
+  if (Object.keys(dias).length === 0) { mostrarToast('Marque al menos un día', 'warning'); return; }
+
+  var registro = {
+    conductor: nombre, placa: placa,
+    año: a, mes: m, semana: s,
+    dias: dias, observacion: ''
+  };
+
+  _guardarRegistro(registro);
+}
+
+function _guardarRegistro(registro) {
+  if (_guardandoEnProgreso) { mostrarToast('⏳ Guardando...', 'info'); return; }
+  _guardandoEnProgreso = true;
+
+  var registros = JSON.parse(localStorage.getItem("disponibilidades")) || {};
+  registros[claveRegistro(registro.placa, registro.conductor, registro.año, registro.mes, registro.semana)] = registro;
+  localStorage.setItem("disponibilidades", JSON.stringify(registros));
+
+  _registrosCache[claveRegistro(registro.placa, registro.conductor, registro.año, registro.mes, registro.semana)] = registro;
+
+  // Enviar a Sheets en el nuevo formato
+  var data = construirPayloadSheets(registro);
+
+  var btn = $('btnGuardarSemana');
+  var txtOrig = btn.innerHTML;
+  btn.innerHTML = '⏳ Guardando...';
+  btn.disabled = true;
+
+  var restaurar = function() {
+    btn.innerHTML = txtOrig;
+    btn.style.backgroundColor = '';
+    btn.disabled = false;
+    _guardandoEnProgreso = false;
+    actualizarIdentificacion();
+    actualizarBotonBorrar();
+  };
+
+  enviarASheets(data)
+    .then(function() {
+      mostrarToast('✅ Semana guardada', 'success');
+      btn.innerHTML = '✅ ¡GUARDADO!';
+      btn.style.backgroundColor = '#27ae60';
+      setTimeout(restaurar, 2000);
+    })
+    .catch(function() {
+      mostrarToast('⚠️ Guardado local (sin red)', 'warning');
+      setTimeout(restaurar, 2500);
+    });
+}
+
+function construirPayloadSheets(registro) {
+  var dias = registro.dias || {};
+  var fecha = 'Semana ' + registro.semana + ' ' + MESES_NOMBRES[registro.mes - 1] + ' ' + registro.año;
+  var valores = {};
+  for (var i = 0; i < 7; i++) {
+    var e = dias[i] || {};
+    var col = DIAS_SEMANA_LARGOS[i];
+    if (e.x === 'descanso') { valores[col + '_D'] = 'DESCANSO'; valores[col + '_N'] = ''; }
+    else if (e.x === 'mantenimiento') { valores[col + '_D'] = 'MANTENIMIENTO'; valores[col + '_N'] = ''; }
+    else if (e.x === 'spot') { valores[col + '_D'] = 'SPOT'; valores[col + '_N'] = ''; }
+    else {
+      valores[col + '_D'] = e.d ? '1/2' : '';
+      valores[col + '_N'] = e.n ? '2/2' : '';
+    }
+  }
+  return {
+    placa: registro.placa,
+    conductor: registro.conductor,
+    año: registro.año,
+    mes: registro.mes,
+    semana: registro.semana,
+    fecha: fecha,
+    dias: valores,
+    observacion: registro.observacion || '',
+    total_d: Object.keys(dias).filter(function(k){ return dias[k].d; }).length,
+    total_n: Object.keys(dias).filter(function(k){ return dias[k].n; }).length
+  };
+}
+
+function borrarMiRegistro() {
+  if (rolActual !== 'usuario' || !placaLogueada || !conductorLogueado) return;
+  var a = Number($('año').value);
+  var m = Number($('mes').value);
+  var s = Number($('semana').value);
+  if (!a || !m || !s) return;
+
+  mostrarConfirm('¿Borrar la semana ' + s + ' de ' + MESES_NOMBRES[m-1] + ' ' + a + '?', function(ok) {
+    if (!ok) return;
+    eliminarRegistroLocal(placaLogueada, conductorLogueado, a, m, s);
+    delete _registrosCache[claveRegistro(placaLogueada, conductorLogueado, a, m, s)];
+    enviarASheets({
+      placa: placaLogueada, conductor: conductorLogueado,
+      año: a, mes: m, semana: s, fecha: 'Semana ' + s + ' ' + MESES_NOMBRES[m-1] + ' ' + a,
+      dias: {}, observacion: '', accion: 'BORRAR'
+    });
+    _diasSemanaActual = {};
+    renderCalendarioSemanalActual();
+    actualizarResumenSemanal();
+    actualizarIdentificacion();
+    actualizarBotonBorrar();
+    mostrarToast('🗑️ Registro borrado', 'success');
+  }, 'Borrar');
+}
+
+function actualizarBotonBorrar() {
+  var btn = $('btnBorrarRegistro');
+  if (!btn) return;
+  if (rolActual !== 'usuario' || !placaLogueada || !conductorLogueado) { btn.classList.remove('visible'); return; }
+  var a = Number($('año').value);
+  var m = Number($('mes').value);
+  var s = Number($('semana').value);
+  if (!a || !m || !s) { btn.classList.remove('visible'); return; }
+  var r = obtenerRegistroLocal(placaLogueada, conductorLogueado, a, m, s);
+  if (r) btn.classList.add('visible'); else btn.classList.remove('visible');
+}
+
+/* -------- Visualización admin -------- */
+
+function cambiarVista(vista) {
+  vistaActual = vista;
+  document.querySelectorAll('.tab-vista-btn').forEach(function(b) { b.classList.toggle('activo', b.dataset.vista === vista); });
+  document.querySelectorAll('.vista-contenido').forEach(function(el) { el.classList.remove('activo'); });
+  if (vista === 'tabla') { $('vistaTabla').classList.add('activo'); renderizarTablaDesdeCache(); }
+  else if (vista === 'calendario') { $('vistaCalendario').classList.add('activo'); cargarCalendarioMensual(); }
+  else if (vista === 'reporte') { $('vistaReporte').classList.add('activo'); }
+}
+
+function cargarVisualizacion() {
+  if (rolActual !== 'admin') return;
+  $('contenedorVisualizacion').innerHTML = '<p style="text-align:center;padding:30px;">⏳ Cargando...</p>';
+  fetch(GOOGLE_SHEETS_URL + '?t=' + Date.now(), { cache: 'no-store' })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (Array.isArray(data)) {
+        _registrosCache = _registrosCache || {};
+        // No parseamos el formato viejo, se deja como está
+      }
+      renderizarTablaDesdeCache();
+    })
+    .catch(function() { renderizarTablaDesdeCache(); });
+}
+
+function renderizarTablaDesdeCache() {
+  var filtroPlaca = $('filtroPlaca').value;
+  var filtroConductor = $('filtroConductor').value.toUpperCase().trim();
+  var filtroAño = $('filtroAño').value;
+  var filtroMes = $('filtroMes').value;
+  var filtroSemana = $('filtroSemana').value;
+
+  var todos = cargarTodosRegistros();
+  var arr = [];
+  for (var k in todos) {
+    var r = todos[k];
+    if (!r || !r.dias) continue; // saltar formato viejo
+    if (filtroPlaca && r.placa !== filtroPlaca) continue;
+    if (filtroConductor && r.conductor.toUpperCase().indexOf(filtroConductor) < 0) continue;
+    if (filtroAño && Number(r.año) !== Number(filtroAño)) continue;
+    if (filtroMes && Number(r.mes) !== Number(filtroMes)) continue;
+    if (filtroSemana && Number(r.semana) !== Number(filtroSemana)) continue;
+    arr.push(r);
+  }
+
+  arr.sort(function(a, b) {
+    if (a.año !== b.año) return a.año - b.año;
+    if (a.mes !== b.mes) return a.mes - b.mes;
+    if (a.semana !== b.semana) return a.semana - b.semana;
+    if (a.placa !== b.placa) return a.placa.localeCompare(b.placa);
+    return a.conductor.localeCompare(b.conductor);
+  });
+
+  if (arr.length === 0) {
+    $('contenedorVisualizacion').innerHTML = '<div style="text-align:center;padding:40px;color:#666;"><h3>📭 Sin registros</h3></div>';
+    return;
+  }
+
+  var html = '<div class="contenedor-tabla"><table class="tabla-disponibilidad"><thead><tr>';
+  html += '<th>N°</th><th>Conductor</th><th>Placa</th>';
+  html += '<th>Sem</th>';
+  DIAS_SEMANA_LARGOS.forEach(function(d) {
+    html += '<th class="col-d">' + d + '-D</th><th class="col-n">' + d + '-N</th>';
+  });
+  html += '<th class="col-obs">Observación</th><th>Acción</th>';
+  html += '</tr></thead><tbody>';
+
+  arr.forEach(function(r, i) {
+    html += construirFilaTabla(r, i + 1);
+  });
+  html += '</tbody></table></div>';
+  html += '<div style="margin-top:15px;text-align:right;">Total: <strong>' + arr.length + '</strong> registro(s)</div>';
+  $('contenedorVisualizacion').innerHTML = html;
+}
+
+function valorCelda(est, tipo) {
+  if (!est) return '';
+  if (est.x === 'descanso') return tipo === 'd' ? '<span class="celda-x">DESCANSO</span>' : '';
+  if (est.x === 'mantenimiento') return tipo === 'd' ? '<span class="celda-m">MANTENIM.</span>' : '';
+  if (est.x === 'spot') return tipo === 'd' ? '<span class="celda-s">SPOT</span>' : '';
+  if (tipo === 'd' && est.d) return '<span class="celda-d">1/2</span>';
+  if (tipo === 'n' && est.n) return '<span class="celda-n">2/2</span>';
+  return '';
+}
+
+function construirFilaTabla(r, num) {
+  var dias = r.dias || {};
+  var html = '<tr>';
+  html += '<td>' + num + '</td>';
+  html += '<td>' + escapeHtml(r.conductor) + '</td>';
+  html += '<td><strong>' + escapeHtml(r.placa) + '</strong></td>';
+  html += '<td>S' + r.semana + '<br><small>' + MESES_NOMBRES[r.mes-1].substring(0,3) + ' ' + r.año + '</small></td>';
+
+  for (var i = 0; i < 7; i++) {
+    var e = dias[i] || {};
+    var vD = valorCelda(e, 'd') || '<span class="celda-vacia">—</span>';
+    var vN = valorCelda(e, 'n') || '<span class="celda-vacia">—</span>';
+    html += '<td class="col-d">' + vD + '</td>';
+    html += '<td class="col-n">' + vN + '</td>';
+  }
+
+  var key = claveRegistro(r.placa, r.conductor, r.año, r.mes, r.semana);
+  html += '<td class="col-obs"><input type="text" data-key="' + escapeAttr(key) + '" value="' + escapeAttr(r.observacion || '') + '" placeholder="Observación..." onchange="guardarObservacion(this)"></td>';
+  html += '<td><button class="btn-eliminar" onclick="borrarRegistroAdmin(\'' + escapeAttr(r.placa) + '\',\'' + escapeAttr(r.conductor) + '\',' + r.año + ',' + r.mes + ',' + r.semana + ')">🗑️</button></td>';
+  html += '</tr>';
+  return html;
+}
+
+function guardarObservacion(input) {
+  var key = input.getAttribute('data-key');
+  var txt = input.value;
+  var registros = JSON.parse(localStorage.getItem("disponibilidades")) || {};
+  if (registros[key]) {
+    registros[key].observacion = txt;
+    localStorage.setItem("disponibilidades", JSON.stringify(registros));
+    if (_registrosCache[key]) _registrosCache[key].observacion = txt;
+    mostrarToast('💾 Observación guardada', 'success', 1500);
+  }
+}
+
+function borrarRegistroAdmin(placa, conductor, año, mes, semana) {
+  mostrarConfirm('¿Borrar semana ' + semana + ' de ' + conductor + '?', function(ok) {
+    if (!ok) return;
+    eliminarRegistroLocal(placa, conductor, año, mes, semana);
+    delete _registrosCache[claveRegistro(placa, conductor, año, mes, semana)];
+    enviarASheets({
+      placa: placa, conductor: conductor, año: año, mes: mes, semana: semana,
+      fecha: 'Semana ' + semana + ' ' + MESES_NOMBRES[mes-1] + ' ' + año,
+      dias: {}, observacion: '', accion: 'BORRAR'
+    });
+    renderizarTablaDesdeCache();
+    mostrarToast('🗑️ Registro borrado', 'success');
+  }, 'Borrar');
+}
+
+/* -------- Calendario mensual (vista admin) -------- */
+
+function cargarCalendarioMensual() {
+  var filtroPlaca = $('filtroPlaca').value;
+  var filtroConductor = $('filtroConductor').value.toUpperCase().trim();
+  var filtroAño = Number($('filtroAño').value);
+  var filtroMes = Number($('filtroMes').value);
+
+  if (!filtroAño || !filtroMes) { $('contenedorCalendarioMensual').innerHTML = '<p style="text-align:center;">Seleccione año y mes</p>'; return; }
+
+  var diasMes = new Date(filtroAño, filtroMes, 0).getDate();
+  var posIni = (new Date(filtroAño, filtroMes - 1, 1).getDay() + 6) % 7;
+
+  var todos = cargarTodosRegistros();
+  var diasMap = {};
+  for (var d = 1; d <= diasMes; d++) diasMap[d] = { d: [], n: [], x: [], m: [], s: [] };
+
+  for (var k in todos) {
+    var r = todos[k];
+    if (!r || !r.dias) continue;
+    if (Number(r.año) !== filtroAño || Number(r.mes) !== filtroMes) continue;
+    if (filtroPlaca && r.placa !== filtroPlaca) continue;
+    if (filtroConductor && r.conductor.toUpperCase().indexOf(filtroConductor) < 0) continue;
+
+    // Necesitamos saber a qué día del mes corresponde cada idx de la semana
+    var semanas = semanasDelMes(r.año, r.mes);
+    var sem = semanas.filter(function(x) { return x.num === r.semana; })[0];
+    if (!sem) continue;
+    var dias = diasDeLaSemana(sem);
+    for (var i = 0; i < 7; i++) {
+      var dd = dias[i];
+      if (dd.mes !== filtroMes || dd.año !== filtroAño) continue;
+      var e = r.dias[i];
+      if (!e) continue;
+      if (e.d) diasMap[dd.dia].d.push(r.conductor);
+      if (e.n) diasMap[dd.dia].n.push(r.conductor);
+      if (e.x === 'descanso') diasMap[dd.dia].x.push(r.conductor);
+      if (e.x === 'mantenimiento') diasMap[dd.dia].m.push(r.conductor);
+      if (e.x === 'spot') diasMap[dd.dia].s.push(r.conductor);
+    }
+  }
+
+  var html = '<div style="text-align:center;margin-bottom:15px;"><h3 style="color:#17365d;">📅 ' + MESES_NOMBRES[filtroMes-1] + ' ' + filtroAño + '</h3></div>';
+  html += '<div class="vista-calendario-mensual">';
+  DIAS_SEMANA_CORTOS.forEach(function(d) { html += '<div class="cal-header-dia">' + d + '</div>'; });
+  for (var i = 0; i < posIni; i++) html += '<div></div>';
+
+  for (var dia = 1; dia <= diasMes; dia++) {
+    var info = diasMap[dia];
+    var tot = info.d.length + info.n.length + info.x.length + info.m.length + info.s.length;
+    html += '<div class="cal-dia">';
+    html += '<div class="num">' + dia + '</div>';
+    if (tot > 0) {
+      html += '<div class="cnt">';
+      if (info.d.length) html += '<span class="b d">☀️ ' + info.d.length + '</span>';
+      if (info.n.length) html += '<span class="b n">🌙 ' + info.n.length + '</span>';
+      if (info.x.length) html += '<span class="b x">🛌 ' + info.x.length + '</span>';
+      if (info.m.length) html += '<span class="b m">🔧 ' + info.m.length + '</span>';
+      if (info.s.length) html += '<span class="b s">📌 ' + info.s.length + '</span>';
+      html += '</div>';
+    }
+    html += '</div>';
+  }
+  html += '</div>';
+  $('contenedorCalendarioMensual').innerHTML = html;
+}
+
+/* -------- Reporte: Excel / PDF -------- */
+
+function construirFilasReporte() {
+  var filtroPlaca = $('filtroPlaca').value;
+  var filtroConductor = $('filtroConductor').value.toUpperCase().trim();
+  var filtroAño = Number($('filtroAño').value);
+  var filtroMes = Number($('filtroMes').value);
+  var filtroSemana = $('filtroSemana').value;
+
+  var todos = cargarTodosRegistros();
+  var arr = [];
+  for (var k in todos) {
+    var r = todos[k];
+    if (!r || !r.dias) continue;
+    if (filtroPlaca && r.placa !== filtroPlaca) continue;
+    if (filtroConductor && r.conductor.toUpperCase().indexOf(filtroConductor) < 0) continue;
+    if (filtroAño && Number(r.año) !== filtroAño) continue;
+    if (filtroMes && Number(r.mes) !== filtroMes) continue;
+    if (filtroSemana && Number(r.semana) !== Number(filtroSemana)) continue;
+    arr.push(r);
+  }
+  arr.sort(function(a, b) {
+    if (a.año !== b.año) return a.año - b.año;
+    if (a.mes !== b.mes) return a.mes - b.mes;
+    if (a.semana !== b.semana) return a.semana - b.semana;
+    return a.conductor.localeCompare(b.conductor);
+  });
+
+  var filas = [];
+  arr.forEach(function(r, i) {
+    var dias = r.dias || {};
+    var fila = [i + 1, r.conductor, r.placa];
+    for (var d = 0; d < 7; d++) {
+      var e = dias[d] || {};
+      var vD = '', vN = '';
+      if (e.x === 'descanso') { vD = 'DESCANSO'; vN = ''; }
+      else if (e.x === 'mantenimiento') { vD = 'MANTENIMIENTO'; vN = ''; }
+      else if (e.x === 'spot') { vD = 'SPOT'; vN = ''; }
+      else {
+        vD = e.d ? '1/2' : '';
+        vN = e.n ? '2/2' : '';
+      }
+      fila.push(vD, vN);
+    }
+    fila.push(r.observacion || ''); // OBSERVACIÓN
+    filas.push(fila);
+  });
+  return filas;
+}
+
+function cabecerasReporte() {
+  var cab = ['N°', 'CONDUCTOR', 'PLACA'];
+  DIAS_SEMANA_LARGOS.forEach(function(d) { cab.push(d + '-D', d + '-N'); });
+  cab.push('OBSERVACIÓN');
+  return cab;
+}
+
+function exportarExcel() {
+  var filas = construirFilasReporte();
+  if (filas.length === 0) { mostrarToast('Sin datos para exportar', 'warning'); return; }
+
+  var wb = new ExcelJS.Workbook();
+  var ws = wb.addWorksheet('Disponibilidad');
+
+  var título = 'DISPONIBILIDAD SEMANAL - ' + MESES_NOMBRES[Number($('filtroMes').value) - 1] + ' ' + $('filtroAño').value;
+  ws.mergeCells(1, 1, 1, 18);
+  ws.getCell(1, 1).value = título;
+  ws.getCell(1, 1).font = { bold: true, size: 14, color: { argb: 'FF17365D' } };
+  ws.getCell(1, 1).alignment = { horizontal: 'center' };
+
+  var cab = cabecerasReporte();
+  ws.addRow([]);
+  ws.addRow(cab);
+  var headerRow = ws.getRow(3);
+  headerRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+  headerRow.eachCell(function(c) {
+    c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF17365D' } };
+    c.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true };
+  });
+
+  filas.forEach(function(f) { ws.addRow(f); });
+
+  ws.getColumn(1).width = 5;
+  ws.getColumn(2).width = 32;
+  ws.getColumn(3).width = 12;
+  for (var i = 4; i <= 17; i++) ws.getColumn(i).width = 9;
+  ws.getColumn(18).width = 30;
+
+  wb.xlsx.writeBuffer().then(function(buf) {
+    saveAs(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
+      'Disponibilidad_Semanal_' + $('filtroMes').value + '_' + $('filtroAño').value + '.xlsx');
+    mostrarToast('✅ Excel listo (' + filas.length + ' filas)', 'success');
+  });
+}
+
+function exportarPDF() {
+  var filas = construirFilasReporte();
+  if (filas.length === 0) { mostrarToast('Sin datos para exportar', 'warning'); return; }
+
+  var jsPDF = window.jspdf.jsPDF;
+  var doc = new jsPDF('landscape', 'mm', 'a4');
+  var pw = doc.internal.pageSize.getWidth();
+
+  doc.setFontSize(14); doc.setTextColor(23, 54, 93);
+  doc.text('TRANSFERMATRI S.A.', pw / 2, 12, { align: 'center' });
+  doc.setFontSize(10);
+  doc.text('DISPONIBILIDAD SEMANAL - ' + MESES_NOMBRES[Number($('filtroMes').value) - 1] + ' ' + $('filtroAño').value, pw / 2, 18, { align: 'center' });
+
+  doc.autoTable({
+    head: [cabecerasReporte()],
+    body: filas,
+    startY: 23,
+    styles: { fontSize: 7, cellPadding: 1.5, overflow: 'linebreak' },
+    headStyles: { fillColor: [23, 54, 93], textColor: 255, fontSize: 7, halign: 'center' },
+    columnStyles: {
+      0: { cellWidth: 8, halign: 'center' },
+      1: { cellWidth: 40 },
+      2: { cellWidth: 18, halign: 'center' },
+      17: { cellWidth: 30 }
+    },
+    didParseCell: function(data) {
+      if (data.section === 'body' && data.column.index >= 3 && data.column.index <= 16) {
+        var v = String(data.cell.raw || '');
+        if (v === 'DESCANSO') data.cell.styles.textColor = [184, 92, 0];
+        else if (v === 'MANTENIMIENTO') data.cell.styles.textColor = [146, 43, 33];
+        else if (v === 'SPOT') data.cell.styles.textColor = [133, 100, 4];
+        else if (v) data.cell.styles.textColor = [26, 122, 58];
+        data.cell.styles.halign = 'center';
+      }
+    }
+  });
+
+  doc.save('Disponibilidad_Semanal_' + $('filtroMes').value + '_' + $('filtroAño').value + '.pdf');
+  mostrarToast('✅ PDF listo (' + filas.length + ' filas)', 'success');
+}
+
+function subirAGoogleSheets(btn) {
+  if (!btn) return;
+  var t = btn.innerHTML; btn.innerHTML = '⏳...'; btn.disabled = true;
+  var todos = cargarTodosRegistros();
+  var lista = [];
+  for (var k in todos) {
+    var r = todos[k];
+    if (!r || !r.dias) continue;
+    lista.push(construirPayloadSheets(r));
+  }
+  if (lista.length === 0) { btn.innerHTML = '📭'; setTimeout(function() { btn.innerHTML = t; btn.disabled = false; }, 1500); return; }
+  var e = 0;
+  lista.forEach(function(data) {
+    enviarASheets(data).then(function() {
+      e++;
+      if (e === lista.length) {
+        btn.innerHTML = '✅';
+        mostrarToast('✅ ' + e + ' registros subidos', 'success');
+        setTimeout(function() { btn.innerHTML = t; btn.disabled = false; }, 2000);
+      }
+    });
+  });
+}
+
+/* -------- Eventos -------- */
+
+function iniciar() {
+  console.log('[boot] v4.0');
+  mostrarFechaActual();
+
+  // Poblar selectores principales
+  poblarAños('año', false);
+  poblarMeses('mes', false);
+  poblarPlacas('placa');
+  poblarConductores('conductor');
+  poblarSemanas('semana', $('año').value, $('mes').value, false);
+
+  // Filtros admin
+  poblarPlacasFiltro('filtroPlaca');
+  poblarAños('filtroAño', true);
+  poblarMeses('filtroMes', true);
+  poblarSemanas('filtroSemana', new Date().getFullYear(), new Date().getMonth() + 1, true);
+
+  $('btnIngresar').disabled = true;
+  ocultarCalendario();
+
+  // Login
+  $('btnRolConductor').addEventListener('click', abrirModalConductor);
+  $('btnRolAdmin').addEventListener('click', abrirModalAdmin);
+  $('loginPlaca').addEventListener('change', validarLoginConductor);
+  $('loginConductor').addEventListener('change', validarLoginConductor);
+  $('btnLoginConductor').addEventListener('click', ingresarConductor);
+  $('btnCancelarConductor').addEventListener('click', cerrarModalConductor);
+  $('btnIngresarAdmin').addEventListener('click', verificarClaveAdmin);
+  $('btnCancelarAdmin').addEventListener('click', cerrarModalAdmin);
+  $('claveAdmin').addEventListener('keypress', function(e) { if (e.key === 'Enter') verificarClaveAdmin(); });
+
+  // Cambios en selects de registro
+  $('año').addEventListener('change', function() {
+    poblarSemanas('semana', Number($('año').value), Number($('mes').value), false);
+    actualizarBotonBorrar();
+    actualizarIdentificacion();
+  });
+  $('mes').addEventListener('change', function() {
+    poblarSemanas('semana', Number($('año').value), Number($('mes').value), false);
+    actualizarBotonBorrar();
+    actualizarIdentificacion();
+  });
+  $('semana').addEventListener('change', function() {
+    if (calendarioVisible) ingresar();
+    else actualizarBotonBorrar();
+    actualizarIdentificacion();
+  });
+  $('placa').addEventListener('change', function() {
+    $('btnIngresar').disabled = ($('placa').value === '' || $('conductor').value === '');
+    ocultarCalendario();
+    actualizarBotonBorrar();
+    actualizarIdentificacion();
+  });
+  $('conductor').addEventListener('change', function() {
+    $('btnIngresar').disabled = ($('placa').value === '' || $('conductor').value === '');
+    ocultarCalendario();
+    actualizarBotonBorrar();
+    actualizarIdentificacion();
+  });
+
+  $('btnIngresar').addEventListener('click', ingresar);
+  $('btnGuardarSemana').addEventListener('click', guardarSemana);
+  $('btnBorrarRegistro').addEventListener('click', borrarMiRegistro);
+
+  // Modo calendario
+  document.querySelectorAll('.modo-btn-cal').forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.modo-btn-cal').forEach(function(b) { b.classList.remove('activo'); });
+      btn.classList.add('activo');
+      _modoActual = btn.dataset.modo;
+    });
+  });
+
+  // Tabs principales
+  $('tabBtnRegistrar').addEventListener('click', function() { cambiarTab('registrar'); });
+  $('tabVisualizarBtn').addEventListener('click', function() { cambiarTab('visualizar'); });
+
+  // Vistas admin
+  $('tabVistaTabla').addEventListener('click', function() { cambiarVista('tabla'); });
+  $('tabVistaCalendario').addEventListener('click', function() { cambiarVista('calendario'); });
+  $('tabVistaReporte').addEventListener('click', function() { cambiarVista('reporte'); });
+
+  // Filtros admin
+  $('filtroPlaca').addEventListener('change', function() { if (vistaActual === 'tabla') renderizarTablaDesdeCache(); else if (vistaActual === 'calendario') cargarCalendarioMensual(); });
+  $('filtroConductor').addEventListener('input', function() { if (vistaActual === 'tabla') renderizarTablaDesdeCache(); });
+  $('filtroAño').addEventListener('change', function() {
+    poblarSemanas('filtroSemana', Number($('filtroAño').value), Number($('filtroMes').value), true);
+    if (vistaActual === 'tabla') renderizarTablaDesdeCache(); else if (vistaActual === 'calendario') cargarCalendarioMensual();
+  });
+  $('filtroMes').addEventListener('change', function() {
+    poblarSemanas('filtroSemana', Number($('filtroAño').value), Number($('filtroMes').value), true);
+    if (vistaActual === 'tabla') renderizarTablaDesdeCache(); else if (vistaActual === 'calendario') cargarCalendarioMensual();
+  });
+  $('filtroSemana').addEventListener('change', function() { if (vistaActual === 'tabla') renderizarTablaDesdeCache(); else if (vistaActual === 'calendario') cargarCalendarioMensual(); });
+  $('btnActualizar').addEventListener('click', function() { cargarVisualizacion(); });
+
+  // Exportar
+  $('btnExportarExcel').addEventListener('click', exportarExcel);
+  $('btnExportarPDF').addEventListener('click', exportarPDF);
+  $('btnSubirSheets').addEventListener('click', function() { subirAGoogleSheets(this); });
+
+  // Confirm modal
+  $('btnCancelarConfirm').addEventListener('click', function() { cerrarConfirm(false); });
+  $('btnAceptarConfirm').addEventListener('click', function() { cerrarConfirm(true); });
+
+  // Salir
+  $('btnSalirTop').addEventListener('click', cerrarSesion);
+
+  cambiarVista('tabla');
+  console.log('[boot] ✅ v4.0 lista');
+}
+
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar);
+else iniciar();
+
+// Exponer globales que se usan en onclick inline
+window.guardarObservacion = guardarObservacion;
+window.borrarRegistroAdmin = borrarRegistroAdmin;
+window.cerrarConfirm = cerrarConfirm;
+window.mostrarToast = mostrarToast;
+</script>
+</body>
+</html>
