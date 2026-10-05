@@ -11,7 +11,7 @@
 <script>
 (function() {
   var p = new URLSearchParams(window.location.search);
-  if (p.get('v') !== '4.1') { p.set('v', '4.1'); window.location.replace(window.location.pathname + '?' + p.toString()); }
+  if (p.get('v') !== '4.2') { p.set('v', '4.2'); window.location.replace(window.location.pathname + '?' + p.toString()); }
 })();
 </script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -141,19 +141,20 @@ select, input { width: 100%; padding: 12px; border-radius: 7px; border: 1px soli
 .tab-vista-btn { padding: 10px 20px; border: none; border-radius: 7px; background-color: #e8f0fa; color: #17365d; font-weight: bold; cursor: pointer; font-size: 14px; display: flex; align-items: center; gap: 8px; font-family: inherit; }
 .tab-vista-btn.activo { background-color: #17365d; color: white; }
 
-.tabla-disponibilidad { width: 100%; border-collapse: collapse; font-size: 11px; }
-.tabla-disponibilidad th { background-color: #17365d; color: white; padding: 8px 6px; text-align: left; white-space: nowrap; position: sticky; top: 0; z-index: 10; }
-.tabla-disponibilidad td { padding: 8px 6px; border-bottom: 1px solid #ddd; vertical-align: middle; }
-.tabla-disponibilidad .col-d, .tabla-disponibilidad .col-n { text-align: center; min-width: 55px; }
-.tabla-disponibilidad .col-obs { min-width: 180px; }
-.tabla-disponibilidad .col-obs input { padding: 6px 8px; font-size: 12px; border: 1px solid #ddd; border-radius: 4px; }
+.tabla-disponibilidad { width: 100%; border-collapse: collapse; font-size: 12px; }
+.tabla-disponibilidad th { background-color: #17365d; color: white; padding: 8px 6px; text-align: center; white-space: nowrap; position: sticky; top: 0; z-index: 10; }
+.tabla-disponibilidad td { padding: 8px 6px; border-bottom: 1px solid #ddd; vertical-align: middle; text-align: center; }
+.tabla-disponibilidad td:nth-child(2) { text-align: left; }
+.tabla-disponibilidad .col-obs { min-width: 180px; text-align: left; }
+.tabla-disponibilidad .col-obs input { padding: 6px 8px; font-size: 12px; border: 1px solid #ddd; border-radius: 4px; width: 100%; }
 
-.celda-d { background: #f1f8ed; color: #1a7a3a; font-weight: bold; padding: 3px 5px; border-radius: 4px; font-size: 10px; display: inline-block; }
-.celda-n { background: #eef5fb; color: #1a5276; font-weight: bold; padding: 3px 5px; border-radius: 4px; font-size: 10px; display: inline-block; }
+.celda-d { background: #d9ead3; color: #1a7a3a; font-weight: bold; padding: 3px 6px; border-radius: 4px; font-size: 11px; display: inline-block; }
+.celda-n { background: #d4e6f1; color: #1a5276; font-weight: bold; padding: 3px 6px; border-radius: 4px; font-size: 11px; display: inline-block; }
 .celda-x { background: #fce4d6; color: #b85c00; font-weight: bold; padding: 3px 5px; border-radius: 4px; font-size: 10px; display: inline-block; }
 .celda-m { background: #fadbd8; color: #922b21; font-weight: bold; padding: 3px 5px; border-radius: 4px; font-size: 10px; display: inline-block; }
 .celda-s { background: #fff3cd; color: #856404; font-weight: bold; padding: 3px 5px; border-radius: 4px; font-size: 10px; display: inline-block; }
 .celda-vacia { color: #ccc; }
+.celda-ambos-wrap { display: inline-flex; gap: 2px; }
 
 .contenedor-tabla { max-height: 600px; overflow: auto; border: 1px solid #ddd; border-radius: 8px; -webkit-overflow-scrolling: touch; }
 
@@ -214,7 +215,7 @@ select, input { width: 100%; padding: 12px; border-radius: 7px; border: 1px soli
   .barra-rol { flex-direction: column; text-align: center; }
   .barra-rol .btn-salir { width: 100%; padding: 12px; }
   .contenedor-tabla { overflow-x: auto; max-height: 60vh; }
-  .tabla-disponibilidad { min-width: 1000px; }
+  .tabla-disponibilidad { min-width: 700px; }
   .vista-calendario-mensual { grid-template-columns: repeat(7, 1fr); gap: 3px; }
   .cal-dia { min-height: 55px; padding: 3px; }
   .cal-dia .num { font-size: 12px; }
@@ -238,7 +239,7 @@ select, input { width: 100%; padding: 12px; border-radius: 7px; border: 1px soli
   </div>
   <div class="header-derecha">
     <div class="fecha-actual" id="fechaActual"></div>
-    <div class="version">Sistema de Disponibilidad Semanal v4.1</div>
+    <div class="version">Sistema de Disponibilidad Semanal v4.2</div>
   </div>
 </header>
 
@@ -341,8 +342,8 @@ select, input { width: 100%; padding: 12px; border-radius: 7px; border: 1px soli
       <p id="mensajeInstruccion">Selecciona el estado arriba y luego haz clic en los días para marcarlos.</p>
 
       <div class="modo-selector-cal">
-        <button class="modo-btn-cal activo" data-modo="diurno">☀️ Diurno (1/2)</button>
-        <button class="modo-btn-cal" data-modo="nocturno">🌙 Nocturno (2/2)</button>
+        <button class="modo-btn-cal activo" data-modo="diurno">☀️ Diurno</button>
+        <button class="modo-btn-cal" data-modo="nocturno">🌙 Nocturno</button>
         <button class="modo-btn-cal" data-modo="ambos">☀️🌙 Ambos</button>
         <button class="modo-btn-cal" data-modo="descanso">🛌 Descanso</button>
         <button class="modo-btn-cal" data-modo="mantenimiento">🔧 Mantenimiento</button>
@@ -395,7 +396,7 @@ select, input { width: 100%; padding: 12px; border-radius: 7px; border: 1px soli
       <div id="vistaReporte" class="vista-contenido">
         <div style="text-align:center;padding:30px;">
           <h3 style="color:#17365d;">📊 Exportar</h3>
-          <p style="color:#666;font-size:13px;">Formato: N° | CONDUCTOR | PLACA | 14 columnas (Lun-D..Dom-N) | OBSERVACIÓN</p>
+          <p style="color:#666;font-size:13px;">Formato: N° | CONDUCTOR | PLACA | SEM | LUN..DOM | OBSERVACIÓN</p>
           <div style="display:flex;gap:15px;justify-content:center;flex-wrap:wrap;margin-top:15px;">
             <button class="btn-reporte excel" id="btnExportarExcel">📊 EXCEL</button>
             <button class="btn-reporte pdf" id="btnExportarPDF">📄 PDF</button>
@@ -409,8 +410,11 @@ select, input { width: 100%; padding: 12px; border-radius: 7px; border: 1px soli
 
 <script>
 /* ============================================================
-   TRANSFERMATRI v4.1 — Disponibilidad SEMANAL 2026-2028
-   Fix: semanasDelMes con Number() para evitar comparación string/number
+   TRANSFERMATRI v4.2 — Disponibilidad SEMANAL 2026-2028
+   - Fix semanasDelMes con Number()
+   - Botones de modo sin (1/2) ni (2/2)
+   - Tabla y reportes: 7 columnas (LUN..DOM) en vez de 14
+   - 1/2 = solo Diurno | 2/2 = solo Nocturno | Ambos = 1/2+2/2
    ============================================================ */
 
 window.addEventListener('error', function(e) {
@@ -492,12 +496,11 @@ function escapeAttr(t) { return String(t == null ? '' : t).replace(/&/g,'&amp;')
 /* -------- Fechas -------- */
 
 function semanasDelMes(año, mes) {
-  /* FIX v4.1: forzar Number() para evitar comparación estricta string vs number */
   año = Number(año);
   mes = Number(mes);
   var semanas = [];
   var primerDia = new Date(año, mes - 1, 1);
-  var dow = (primerDia.getDay() + 6) % 7; // 0=Lun
+  var dow = (primerDia.getDay() + 6) % 7;
   var primerLunes = new Date(año, mes - 1, 1 - dow);
   if (primerLunes.getMonth() !== mes - 1 || primerLunes.getFullYear() !== año) {
     primerLunes.setDate(primerLunes.getDate() + 7);
@@ -524,11 +527,6 @@ function diasDeLaSemana(semana) {
   return arr;
 }
 
-function semanaActualGlobal() {
-  var hoy = new Date();
-  return { año: hoy.getFullYear(), mes: hoy.getMonth() + 1, dia: hoy.getDate() };
-}
-
 function semanaDelDia(año, mes, dia) {
   año = Number(año); mes = Number(mes); dia = Number(dia);
   var f = new Date(año, mes - 1, dia);
@@ -544,7 +542,6 @@ function semanaDelDia(año, mes, dia) {
 }
 
 function filtrarSemanasVisibles(semanas, año, mes) {
-  /* FIX v4.1: blindaje Number() */
   año = Number(año);
   mes = Number(mes);
   var hoy = new Date(); hoy.setHours(0,0,0,0);
@@ -654,7 +651,6 @@ function poblarSemanas(selectId, año, mes, permitirTodas, valorInicial) {
     s.innerHTML = '<option value="">Seleccione año y mes</option>';
     return;
   }
-  /* FIX v4.1: blindaje Number() */
   año = Number(año);
   mes = Number(mes);
   var semanas = semanasDelMes(año, mes);
@@ -1169,20 +1165,25 @@ function _guardarRegistro(registro) {
     });
 }
 
+/* Devuelve el texto de un día según el estado, para usar en reportes/tabla */
+function valorDia(est) {
+  if (!est) return '';
+  if (est.x === 'descanso') return 'DESCANSO';
+  if (est.x === 'mantenimiento') return 'MANTENIMIENTO';
+  if (est.x === 'spot') return 'SPOT';
+  if (est.d && est.n) return '1/2 + 2/2';
+  if (est.d) return '1/2';
+  if (est.n) return '2/2';
+  return '';
+}
+
 function construirPayloadSheets(registro) {
   var dias = registro.dias || {};
   var fecha = 'Semana ' + registro.semana + ' ' + MESES_NOMBRES[registro.mes - 1] + ' ' + registro.año;
   var valores = {};
   for (var i = 0; i < 7; i++) {
     var e = dias[i] || {};
-    var col = DIAS_SEMANA_LARGOS[i];
-    if (e.x === 'descanso') { valores[col + '_D'] = 'DESCANSO'; valores[col + '_N'] = ''; }
-    else if (e.x === 'mantenimiento') { valores[col + '_D'] = 'MANTENIMIENTO'; valores[col + '_N'] = ''; }
-    else if (e.x === 'spot') { valores[col + '_D'] = 'SPOT'; valores[col + '_N'] = ''; }
-    else {
-      valores[col + '_D'] = e.d ? '1/2' : '';
-      valores[col + '_N'] = e.n ? '2/2' : '';
-    }
+    valores[DIAS_SEMANA_LARGOS[i]] = valorDia(e);
   }
   return {
     placa: registro.placa,
@@ -1294,10 +1295,9 @@ function renderizarTablaDesdeCache() {
   }
 
   var html = '<div class="contenedor-tabla"><table class="tabla-disponibilidad"><thead><tr>';
-  html += '<th>N°</th><th>Conductor</th><th>Placa</th>';
-  html += '<th>Sem</th>';
+  html += '<th>N°</th><th>Conductor</th><th>Placa</th><th>Sem</th>';
   DIAS_SEMANA_LARGOS.forEach(function(d) {
-    html += '<th class="col-d">' + d + '-D</th><th class="col-n">' + d + '-N</th>';
+    html += '<th>' + d + '</th>';
   });
   html += '<th class="col-obs">Observación</th><th>Acción</th>';
   html += '</tr></thead><tbody>';
@@ -1310,14 +1310,15 @@ function renderizarTablaDesdeCache() {
   $('contenedorVisualizacion').innerHTML = html;
 }
 
-function valorCelda(est, tipo) {
-  if (!est) return '';
-  if (est.x === 'descanso') return tipo === 'd' ? '<span class="celda-x">DESCANSO</span>' : '';
-  if (est.x === 'mantenimiento') return tipo === 'd' ? '<span class="celda-m">MANTENIM.</span>' : '';
-  if (est.x === 'spot') return tipo === 'd' ? '<span class="celda-s">SPOT</span>' : '';
-  if (tipo === 'd' && est.d) return '<span class="celda-d">1/2</span>';
-  if (tipo === 'n' && est.n) return '<span class="celda-n">2/2</span>';
-  return '';
+function celdaHtml(est) {
+  if (!est || (!est.d && !est.n && !est.x)) return '<span class="celda-vacia">—</span>';
+  if (est.x === 'descanso') return '<span class="celda-x">DESCANSO</span>';
+  if (est.x === 'mantenimiento') return '<span class="celda-m">MANTEN.</span>';
+  if (est.x === 'spot') return '<span class="celda-s">SPOT</span>';
+  if (est.d && est.n) return '<span class="celda-ambos-wrap"><span class="celda-d">1/2</span><span class="celda-n">2/2</span></span>';
+  if (est.d) return '<span class="celda-d">1/2</span>';
+  if (est.n) return '<span class="celda-n">2/2</span>';
+  return '<span class="celda-vacia">—</span>';
 }
 
 function construirFilaTabla(r, num) {
@@ -1330,10 +1331,7 @@ function construirFilaTabla(r, num) {
 
   for (var i = 0; i < 7; i++) {
     var e = dias[i] || {};
-    var vD = valorCelda(e, 'd') || '<span class="celda-vacia">—</span>';
-    var vN = valorCelda(e, 'n') || '<span class="celda-vacia">—</span>';
-    html += '<td class="col-d">' + vD + '</td>';
-    html += '<td class="col-n">' + vN + '</td>';
+    html += '<td>' + celdaHtml(e) + '</td>';
   }
 
   var key = claveRegistro(r.placa, r.conductor, r.año, r.mes, r.semana);
@@ -1467,18 +1465,10 @@ function construirFilasReporte() {
   var filas = [];
   arr.forEach(function(r, i) {
     var dias = r.dias || {};
-    var fila = [i + 1, r.conductor, r.placa];
+    var fila = [i + 1, r.conductor, r.placa, 'S' + r.semana + ' ' + MESES_NOMBRES[r.mes-1].substring(0,3) + ' ' + r.año];
     for (var d = 0; d < 7; d++) {
       var e = dias[d] || {};
-      var vD = '', vN = '';
-      if (e.x === 'descanso') { vD = 'DESCANSO'; vN = ''; }
-      else if (e.x === 'mantenimiento') { vD = 'MANTENIMIENTO'; vN = ''; }
-      else if (e.x === 'spot') { vD = 'SPOT'; vN = ''; }
-      else {
-        vD = e.d ? '1/2' : '';
-        vN = e.n ? '2/2' : '';
-      }
-      fila.push(vD, vN);
+      fila.push(valorDia(e));
     }
     fila.push(r.observacion || '');
     filas.push(fila);
@@ -1487,10 +1477,7 @@ function construirFilasReporte() {
 }
 
 function cabecerasReporte() {
-  var cab = ['N°', 'CONDUCTOR', 'PLACA'];
-  DIAS_SEMANA_LARGOS.forEach(function(d) { cab.push(d + '-D', d + '-N'); });
-  cab.push('OBSERVACIÓN');
-  return cab;
+  return ['N°', 'CONDUCTOR', 'PLACA', 'SEM', 'LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM', 'OBSERVACIÓN'];
 }
 
 function exportarExcel() {
@@ -1501,7 +1488,7 @@ function exportarExcel() {
   var ws = wb.addWorksheet('Disponibilidad');
 
   var título = 'DISPONIBILIDAD SEMANAL - ' + MESES_NOMBRES[Number($('filtroMes').value) - 1] + ' ' + $('filtroAño').value;
-  ws.mergeCells(1, 1, 1, 18);
+  ws.mergeCells(1, 1, 1, 12);
   ws.getCell(1, 1).value = título;
   ws.getCell(1, 1).font = { bold: true, size: 14, color: { argb: 'FF17365D' } };
   ws.getCell(1, 1).alignment = { horizontal: 'center' };
@@ -1521,8 +1508,9 @@ function exportarExcel() {
   ws.getColumn(1).width = 5;
   ws.getColumn(2).width = 32;
   ws.getColumn(3).width = 12;
-  for (var i = 4; i <= 17; i++) ws.getColumn(i).width = 9;
-  ws.getColumn(18).width = 30;
+  ws.getColumn(4).width = 12;
+  for (var i = 5; i <= 11; i++) ws.getColumn(i).width = 12;
+  ws.getColumn(12).width = 32;
 
   wb.xlsx.writeBuffer().then(function(buf) {
     saveAs(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
@@ -1548,20 +1536,30 @@ function exportarPDF() {
     head: [cabecerasReporte()],
     body: filas,
     startY: 23,
-    styles: { fontSize: 7, cellPadding: 1.5, overflow: 'linebreak' },
-    headStyles: { fillColor: [23, 54, 93], textColor: 255, fontSize: 7, halign: 'center' },
+    styles: { fontSize: 8, cellPadding: 2, overflow: 'linebreak' },
+    headStyles: { fillColor: [23, 54, 93], textColor: 255, fontSize: 8, halign: 'center' },
     columnStyles: {
-      0: { cellWidth: 8, halign: 'center' },
-      1: { cellWidth: 40 },
-      2: { cellWidth: 18, halign: 'center' },
-      17: { cellWidth: 30 }
+      0: { cellWidth: 10, halign: 'center' },
+      1: { cellWidth: 50 },
+      2: { cellWidth: 20, halign: 'center' },
+      3: { cellWidth: 22, halign: 'center' },
+      4: { cellWidth: 20, halign: 'center' },
+      5: { cellWidth: 20, halign: 'center' },
+      6: { cellWidth: 20, halign: 'center' },
+      7: { cellWidth: 20, halign: 'center' },
+      8: { cellWidth: 20, halign: 'center' },
+      9: { cellWidth: 20, halign: 'center' },
+      10: { cellWidth: 20, halign: 'center' },
+      11: { cellWidth: 35 }
     },
     didParseCell: function(data) {
-      if (data.section === 'body' && data.column.index >= 3 && data.column.index <= 16) {
+      if (data.section === 'body' && data.column.index >= 4 && data.column.index <= 10) {
         var v = String(data.cell.raw || '');
         if (v === 'DESCANSO') data.cell.styles.textColor = [184, 92, 0];
         else if (v === 'MANTENIMIENTO') data.cell.styles.textColor = [146, 43, 33];
         else if (v === 'SPOT') data.cell.styles.textColor = [133, 100, 4];
+        else if (v === '1/2') data.cell.styles.textColor = [26, 122, 58];
+        else if (v === '2/2') data.cell.styles.textColor = [26, 82, 118];
         else if (v) data.cell.styles.textColor = [26, 122, 58];
         data.cell.styles.halign = 'center';
       }
@@ -1599,7 +1597,7 @@ function subirAGoogleSheets(btn) {
 /* -------- Eventos -------- */
 
 function iniciar() {
-  console.log('[boot] v4.1');
+  console.log('[boot] v4.2');
   mostrarFechaActual();
 
   poblarAños('año', false);
@@ -1696,7 +1694,7 @@ function iniciar() {
   $('btnSalirTop').addEventListener('click', cerrarSesion);
 
   cambiarVista('tabla');
-  console.log('[boot] ✅ v4.1 lista');
+  console.log('[boot] ✅ v4.2 lista');
 }
 
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar);
